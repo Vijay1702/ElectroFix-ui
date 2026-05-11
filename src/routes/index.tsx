@@ -1,5 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import DashboardPage from "@/pages/dashboard";
+import CustomersPage from "@/pages/customers";
+import RepairsPage from "@/pages/repairs";
+import ProductsPage from "@/pages/products";
+import InvoicesPage from "@/pages/invoices";
+import PaymentsPage from "@/pages/payments";
 import AppLayout from "@/components/layout/AppLayout";
 
 export const router = createBrowserRouter([
@@ -13,15 +18,23 @@ export const router = createBrowserRouter([
       },
       {
         path: "/customers",
-        element: <div>Customers Page</div>,
+        element: <CustomersPage />,
       },
       {
         path: "/repairs",
-        element: <div>Repairs Page</div>,
+        element: <RepairsPage />,
       },
       {
         path: "/products",
-        element: <div>Products Page</div>,
+        element: <ProductsPage />,
+      },
+      {
+        path: "/invoices",
+        element: <InvoicesPage />,
+      },
+      {
+        path: "/payments",
+        element: <PaymentsPage />,
       },
     ],
   },
