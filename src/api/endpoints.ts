@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
     RECENT_REPAIRS: "/dashboard/recent-repairs",
     RECENT_SALES: "/dashboard/recent-sales",
     LOW_STOCK: "/dashboard/low-stock",
+    TECHNICIAN_WORKLOAD: "/dashboard/technician-workload",
   },
 
   REPORTS: {

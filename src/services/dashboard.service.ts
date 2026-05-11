@@ -21,4 +21,9 @@ export const dashboardService = {
     const response = await axiosInstance.get(`${API_ENDPOINTS.DASHBOARD.LOW_STOCK}?limit=${limit}`);
     return response.data.data;
   },
+
+  getTechnicianWorkload: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.DASHBOARD.TECHNICIAN_WORKLOAD);
+    return response.data.data;
+  },
 };

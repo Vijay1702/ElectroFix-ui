@@ -1,19 +1,17 @@
 import { Bell, Search, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 
 const Navbar = () => {
   return (
     <header className="h-16 border-b bg-card flex items-center justify-between px-6">
       <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search repairs, customers..."
-            className="pl-9 w-full bg-background"
-          />
-        </div>
+        <Input
+          type="search"
+          placeholder="Search repairs, customers..."
+          className="bg-background h-10 rounded-lg"
+          icon={<Search className="h-4 w-4" />}
+        />
       </div>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="relative">
