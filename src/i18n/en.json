@@ -1,0 +1,24 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "repairJobs": "Repair Jobs",
+    "products": "Products",
+    "billing": "Billing",
+    "payments": "Payments",
+    "reports": "Reports",
+    "settings": "Settings",
+    "users": "Users"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Action completed successfully"
+  }
+}
