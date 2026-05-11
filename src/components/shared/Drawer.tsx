@@ -55,13 +55,6 @@ export function Drawer({ isOpen, onClose, title, children, footer, size = "md" }
         <div className="flex-1 overflow-y-auto px-6 py-8">
           {children}
         </div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="px-6 py-5 border-t bg-muted/10 flex items-center justify-end gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-            {footer}
-          </div>
-        )}
       </div>
     </>
   );

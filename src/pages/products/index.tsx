@@ -4,6 +4,8 @@ import { Plus, Search, Filter, AlertTriangle, Edit3, Trash2, Package, Tag, Dolla
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { TextArea } from "@/components/shared/TextArea";
+import { Label } from "@/components/shared/Label";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Drawer } from "@/components/shared/Drawer";
@@ -184,18 +186,22 @@ export default function ProductsPage() {
           <div className="space-y-4">
              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Product Basics</label>
              <div className="grid gap-4">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold">Product Name</span>
-                  <Input placeholder="e.g. iPhone 13 OLED Display" defaultValue={selectedProduct?.name} icon={<Tag className="h-4 w-4" />} />
-                </div>
+                <Input 
+                  label="Product Name" 
+                  required 
+                  placeholder="e.g. iPhone 13 OLED Display" 
+                  defaultValue={selectedProduct?.name} 
+                  icon={<Tag className="h-4 w-4" />} 
+                />
                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1.5">
-                    <span className="text-xs font-semibold">Brand</span>
-                    <Input placeholder="e.g. Apple" defaultValue={selectedProduct?.brand} />
-                  </div>
+                  <Input 
+                    label="Brand" 
+                    placeholder="e.g. Apple" 
+                    defaultValue={selectedProduct?.brand} 
+                  />
                   <div className="space-y-1.5">
-                    <span className="text-xs font-semibold">Category</span>
-                    <select className="flex h-10 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+                    <Label>Category</Label>
+                    <select className="flex h-11 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
                        <option>Smartphones</option>
                        <option>Laptops</option>
                        <option>Tablets</option>
@@ -208,29 +214,43 @@ export default function ProductsPage() {
           <div className="space-y-4 pt-6 border-t">
              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Pricing & Stock</label>
              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold">Purchase Price</span>
-                  <Input type="number" placeholder="0.00" defaultValue={selectedProduct?.purchasePrice} icon={<DollarSign className="h-4 w-4" />} />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold">Selling Price</span>
-                  <Input type="number" placeholder="0.00" defaultValue={selectedProduct?.sellingPrice} icon={<DollarSign className="h-4 w-4" />} />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold">Stock Quantity</span>
-                  <Input type="number" placeholder="0" defaultValue={selectedProduct?.stockQuantity} icon={<Box className="h-4 w-4" />} />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold">Min. Stock Alert</span>
-                  <Input type="number" placeholder="5" defaultValue={selectedProduct?.minimumStock} icon={<AlertTriangle className="h-4 w-4" />} />
-                </div>
+                <Input 
+                  label="Purchase Price" 
+                  required 
+                  type="number" 
+                  placeholder="0.00" 
+                  defaultValue={selectedProduct?.purchasePrice} 
+                  icon={<DollarSign className="h-4 w-4" />} 
+                />
+                <Input 
+                  label="Selling Price" 
+                  required 
+                  type="number" 
+                  placeholder="0.00" 
+                  defaultValue={selectedProduct?.sellingPrice} 
+                  icon={<DollarSign className="h-4 w-4" />} 
+                />
+                <Input 
+                  label="Stock Quantity" 
+                  required 
+                  type="number" 
+                  placeholder="0" 
+                  defaultValue={selectedProduct?.stockQuantity} 
+                  icon={<Box className="h-4 w-4" />} 
+                />
+                <Input 
+                  label="Min. Stock Alert" 
+                  type="number" 
+                  placeholder="5" 
+                  defaultValue={selectedProduct?.minimumStock} 
+                  icon={<AlertTriangle className="h-4 w-4" />} 
+                />
              </div>
           </div>
 
           <div className="space-y-4 pt-6 border-t">
-             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Description</label>
-             <textarea 
-               className="flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] resize-none shadow-inner"
+             <TextArea 
+               label="Description"
                placeholder="Enter product specifications or compatibility notes..."
                defaultValue={selectedProduct?.description}
              />

@@ -4,6 +4,8 @@ import { Plus, Search, Filter, Calendar, Eye, FileEdit, Smartphone, User, Wrench
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { TextArea } from "@/components/shared/TextArea";
+import { Label } from "@/components/shared/Label";
 import { Pagination } from "@/components/shared/Pagination";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
@@ -210,23 +212,25 @@ export default function RepairsPage() {
 
               {/* Right Column */}
               <div className="space-y-6">
-                 <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Device Details</label>
-                    <div className="grid gap-3">
-                       <Input placeholder="Device Type (e.g. Phone)" defaultValue={selectedRepair?.deviceType} />
-                       <Input placeholder="Brand (e.g. Samsung)" defaultValue={selectedRepair?.brand} />
-                       <Input placeholder="Model (e.g. Galaxy S21)" defaultValue={selectedRepair?.model} />
-                    </div>
-                 </div>
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Device Details</label>
+                     <div className="grid gap-4">
+                        <Input label="Device Type" required placeholder="e.g. Smartphone" defaultValue={selectedRepair?.deviceType} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <Input label="Brand" placeholder="e.g. Samsung" defaultValue={selectedRepair?.brand} />
+                          <Input label="Model" placeholder="e.g. Galaxy S21" defaultValue={selectedRepair?.model} />
+                        </div>
+                     </div>
+                  </div>
 
-                 <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Problem Description</label>
-                    <textarea 
-                      className="flex w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] resize-none shadow-inner"
-                      placeholder="Describe the issue in detail..."
-                      defaultValue={selectedRepair?.problemDescription}
-                    />
-                 </div>
+                  <div className="space-y-4">
+                     <TextArea 
+                       label="Problem Description"
+                       required
+                       placeholder="Describe the issue in detail..."
+                       defaultValue={selectedRepair?.problemDescription}
+                     />
+                  </div>
               </div>
            </div>
 

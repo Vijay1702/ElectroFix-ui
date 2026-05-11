@@ -4,6 +4,7 @@ import { Plus, Search, FileEdit, Trash2, Eye, User, Phone, MapPin, Calendar, Wre
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { TextArea } from "@/components/shared/TextArea";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Modal } from "@/components/shared/Modal";
@@ -225,48 +226,40 @@ export default function CustomersPage() {
           <div className="space-y-2">
             <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Information</label>
             <div className="space-y-4 pt-2">
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold">Full Name</span>
-                <Input 
-                  placeholder="e.g. John Doe"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  icon={<User className="h-4 w-4" />}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold">Phone Number</span>
-                <Input 
-                  placeholder="e.g. +1 234 567 890"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                  icon={<Phone className="h-4 w-4" />}
-                />
-              </div>
+              <Input 
+                label="Full Name"
+                required
+                placeholder="e.g. John Doe"
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                icon={<User className="h-4 w-4" />}
+              />
+              <Input 
+                label="Phone Number"
+                required
+                placeholder="e.g. +91 98400 12345"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                icon={<Phone className="h-4 w-4" />}
+              />
             </div>
           </div>
 
           <div className="space-y-2 pt-4 border-t">
             <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Location & Notes</label>
             <div className="space-y-4 pt-2">
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold">Billing Address</span>
-                <textarea 
-                  className="flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-none"
-                  placeholder="Street, City, Postal Code"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold">Internal Notes</span>
-                <textarea 
-                  className="flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-none"
-                  placeholder="Any special instructions or details..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                />
-              </div>
+              <TextArea 
+                label="Billing Address"
+                placeholder="Street, City, Postal Code"
+                value={formData.address}
+                onChange={(e) => setFormData({...formData, address: e.target.value})}
+              />
+              <TextArea 
+                label="Internal Notes"
+                placeholder="Any special instructions or details..."
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              />
             </div>
           </div>
         </form>
