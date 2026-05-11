@@ -180,15 +180,17 @@ export default function CustomersPage() {
             ) : (
               customers.map((customer) => (
                 <TableRow key={customer.id}>
-                  <TableCell className="font-medium text-primary">{customer.customerCode}</TableCell>
+                  <TableCell 
+                    className="font-medium text-primary cursor-pointer hover:underline"
+                    onClick={() => handleOpenView(customer)}
+                  >
+                    {customer.customerCode}
+                  </TableCell>
                   <TableCell className="font-semibold">{customer.fullName}</TableCell>
                   <TableCell>{customer.phoneNumber}</TableCell>
                   <TableCell className="text-muted-foreground truncate max-w-xs">{customer.address || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenView(customer)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 

@@ -35,5 +35,10 @@ export const repairService = {
   getTimeline: async (id: string) => {
     const response = await axiosInstance.get(API_ENDPOINTS.REPAIRS.TIMELINE.replace(':id', id));
     return response.data.data;
+  },
+
+  deleteRepairJob: async (id: string) => {
+    const response = await axiosInstance.delete(`${API_ENDPOINTS.REPAIRS.DELETE}/${id}`);
+    return response.data;
   }
 };

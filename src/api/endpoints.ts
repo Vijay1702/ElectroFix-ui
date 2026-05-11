@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     UPDATE: "/repair-jobs",
     UPDATE_STATUS: "/repair-jobs/:id/status",
     TIMELINE: "/repair-jobs/:id/timeline",
+    DELETE: "/repair-jobs",
   },
 
   PRODUCTS: {

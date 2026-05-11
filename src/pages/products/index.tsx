@@ -9,6 +9,7 @@ import { Label } from "@/components/shared/Label";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Drawer } from "@/components/shared/Drawer";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -207,7 +208,10 @@ export default function ProductsPage() {
             ) : (
               products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell>
+                  <TableCell 
+                    className="cursor-pointer hover:underline"
+                    onClick={() => handleOpenDrawer(product)}
+                  >
                     <div className="font-bold text-primary">{product.name}</div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-tight">Code: {product.productCode} | Brand: {product.brand || 'N/A'}</div>
                   </TableCell>
@@ -290,19 +294,16 @@ export default function ProductsPage() {
                     value={formData.brand}
                     onChange={(e) => setFormData({...formData, brand: e.target.value})}
                   />
-                  <div className="space-y-1.5">
-                    <Label>Category</Label>
-                    <select 
-                      className="flex h-11 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary appearance-none"
-                      value={formData.categoryId}
-                      onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
-                    >
-                       <option value="">Select Category...</option>
-                       <option value="1">Smartphones</option>
-                       <option value="2">Laptops</option>
-                       <option value="3">Tablets</option>
-                    </select>
-                  </div>
+                  <SearchableSelect
+                    label="Category"
+                    options={[
+                      { value: "1", label: "Smartphones" },
+                      { value: "2", label: "Laptops" },
+                      { value: "3", label: "Tablets" },
+                    ]}
+                    value={formData.categoryId}
+                    onChange={(val) => setFormData({...formData, categoryId: val})}
+                  />
                 </div>
              </div>
           </div>
