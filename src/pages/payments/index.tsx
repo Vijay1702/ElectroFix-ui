@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { paymentService } from "@/services/finance.service";
-import { Plus, Search, Filter, CreditCard, ExternalLink } from "lucide-react";
+import { Plus, Search, CreditCard, Calendar, ArrowUpRight } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -13,11 +13,11 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchPayments();
-  }, [page, search]);
+  }, [page, search, limit]);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -35,10 +35,10 @@ export default function PaymentsPage() {
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader 
-        title="Payments" 
-        description="Record and track all incoming transactions."
+        title="Payments & Transactions" 
+        description="Monitor all incoming payments and financial history."
         action={
-          <Button variant="primary" className="bg-green-600 hover:bg-green-700">
+          <Button variant="primary">
             <Plus className="h-5 w-5" /> Record Payment
           </Button>
         }
@@ -51,15 +51,12 @@ export default function PaymentsPage() {
             <div className="w-72">
               <Input
                 type="text"
-                placeholder="Search reference number..."
+                placeholder="Search by invoice or reference..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 icon={<Search className="h-4 w-4" />}
               />
             </div>
-            <Button variant="outline">
-              <Filter className="h-4 w-4" /> Filter by Method
-            </Button>
           </div>
         </div>
 
@@ -67,47 +64,54 @@ export default function PaymentsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Ref No.</TableHead>
-              <TableHead>Invoice Link</TableHead>
+              <TableHead>Reference No.</TableHead>
+              <TableHead>Invoice</TableHead>
               <TableHead>Method</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Amount Paid</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center">
+                <TableCell colSpan={6} className="py-12 text-center">
                   <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                 </TableCell>
               </TableRow>
             ) : payments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  <CreditCard className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                  No payments found.
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                  No payment transactions found.
                 </TableCell>
               </TableRow>
             ) : (
-              payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-medium">{payment.referenceNumber || '-'}</TableCell>
+              payments.map((pmt) => (
+                <TableRow key={pmt.id}>
+                  <TableCell className="font-medium text-foreground">{pmt.referenceNumber || 'N/A'}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 text-primary hover:underline cursor-pointer font-medium">
-                      {payment.invoice?.invoiceNumber}
-                      <ExternalLink className="h-3 w-3" />
-                    </div>
+                    <div className="font-bold text-primary">{pmt.invoice?.invoiceNumber}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase font-semibold">{pmt.invoice?.customer?.fullName}</div>
                   </TableCell>
                   <TableCell>
-                    <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-xs font-medium">
-                      {payment.paymentMethod}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider">
+                      <CreditCard className="h-3 w-3" /> {pmt.paymentMethod}
                     </span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(payment.paymentDate).toLocaleString()}
+                  <TableCell className="text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" /> {new Date(pmt.paymentDate).toLocaleDateString()}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right font-bold text-green-600 dark:text-green-400">
-                    ${Number(payment.paymentAmount).toFixed(2)}
+                  <TableCell className="text-right">
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                      +${Number(pmt.paymentAmount).toFixed(2)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -115,11 +119,12 @@ export default function PaymentsPage() {
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         <Pagination 
           page={page} 
           totalPages={Math.ceil(total / limit)} 
+          limit={limit}
           onPageChange={setPage} 
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
         />
       </div>
     </div>

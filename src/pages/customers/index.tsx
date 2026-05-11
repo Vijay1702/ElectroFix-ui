@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { customerService } from "@/services/customer.service";
-import { Plus, Search, FileEdit, Trash2, Eye, User, Phone, MapPin, Notebook } from "lucide-react";
+import { Plus, Search, FileEdit, Trash2, Eye, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Modal } from "@/components/shared/Modal";
+import { Drawer } from "@/components/shared/Drawer";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -14,12 +15,13 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
-  // Modal States
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  // Sidebar/Drawer States
+  const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -31,7 +33,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page, search]);
+  }, [page, search, limit]);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -64,17 +66,12 @@ export default function CustomersPage() {
         notes: ""
       });
     }
-    setIsFormModalOpen(true);
-  };
-
-  const handleOpenDelete = (customer: any) => {
-    setSelectedCustomer(customer);
-    setIsDeleteModalOpen(true);
+    setIsFormDrawerOpen(true);
   };
 
   const handleOpenView = (customer: any) => {
     setSelectedCustomer(customer);
-    setIsViewModalOpen(true);
+    setIsViewDrawerOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +83,7 @@ export default function CustomersPage() {
       } else {
         await customerService.createCustomer(formData);
       }
-      setIsFormModalOpen(false);
+      setIsFormDrawerOpen(false);
       fetchCustomers();
     } catch (error) {
       console.error("Save failed", error);
@@ -102,6 +99,7 @@ export default function CustomersPage() {
     try {
       await customerService.deleteCustomer(selectedCustomer.id);
       setIsDeleteModalOpen(false);
+      setIsViewDrawerOpen(false); // Close view if delete from there
       fetchCustomers();
     } catch (error) {
       console.error("Delete failed", error);
@@ -129,7 +127,7 @@ export default function CustomersPage() {
           <div className="w-72">
             <Input 
               type="text" 
-              placeholder="Search customers..." 
+              placeholder="Search by name, phone, address..." 
               value={search} 
               onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
               icon={<Search className="h-4 w-4" />}
@@ -188,7 +186,7 @@ export default function CustomersPage() {
                         variant="ghost" 
                         size="icon" 
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleOpenDelete(customer)}
+                        onClick={() => { setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -203,65 +201,164 @@ export default function CustomersPage() {
         <Pagination 
           page={page} 
           totalPages={Math.ceil(total / limit)} 
+          limit={limit}
           onPageChange={setPage} 
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
         />
       </div>
 
-      {/* Form Modal (Create/Edit) */}
-      <Modal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        title={selectedCustomer ? "Edit Customer" : "Add New Customer"}
+      {/* Form Drawer (Create/Edit Sidebar) */}
+      <Drawer
+        isOpen={isFormDrawerOpen}
+        onClose={() => setIsFormDrawerOpen(false)}
+        title={selectedCustomer ? "Edit Customer Details" : "Create New Customer"}
         footer={
           <>
-            <Button variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsFormDrawerOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Saving..." : selectedCustomer ? "Update Customer" : "Create Customer"}
+              {submitting ? "Saving..." : selectedCustomer ? "Update Profile" : "Add Customer"}
             </Button>
           </>
         }
       >
-        <form className="space-y-4">
+        <form className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Full Name</label>
-            <Input 
-              placeholder="e.g. John Doe"
-              value={formData.fullName}
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-              icon={<User className="h-4 w-4" />}
-            />
+            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Information</label>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold">Full Name</span>
+                <Input 
+                  placeholder="e.g. John Doe"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  icon={<User className="h-4 w-4" />}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold">Phone Number</span>
+                <Input 
+                  placeholder="e.g. +1 234 567 890"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                  icon={<Phone className="h-4 w-4" />}
+                />
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Phone Number</label>
-            <Input 
-              placeholder="e.g. +1 234 567 890"
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-              icon={<Phone className="h-4 w-4" />}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Address</label>
-            <textarea 
-              className="flex w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[80px]"
-              placeholder="Street, City, Postal Code"
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Notes (Optional)</label>
-            <textarea 
-              className="flex w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[80px]"
-              placeholder="Any special instructions or details..."
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-            />
+
+          <div className="space-y-2 pt-4 border-t">
+            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Location & Notes</label>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold">Billing Address</span>
+                <textarea 
+                  className="flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-none"
+                  placeholder="Street, City, Postal Code"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold">Internal Notes</span>
+                <textarea 
+                  className="flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-none"
+                  placeholder="Any special instructions or details..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                />
+              </div>
+            </div>
           </div>
         </form>
-      </Modal>
+      </Drawer>
 
-      {/* Delete Confirmation Modal */}
+      {/* View Drawer (Sidebar Details) */}
+      <Drawer
+        isOpen={isViewDrawerOpen}
+        onClose={() => setIsViewDrawerOpen(false)}
+        title="Customer Profile"
+        size="md"
+        footer={
+          <div className="flex w-full justify-between items-center">
+             <Button 
+               variant="ghost" 
+               className="text-destructive hover:bg-destructive/10"
+               onClick={() => setIsDeleteModalOpen(true)}
+             >
+               <Trash2 className="h-4 w-4 mr-2" /> Delete
+             </Button>
+             <Button variant="outline" onClick={() => handleOpenForm(selectedCustomer)}>
+               <FileEdit className="h-4 w-4 mr-2" /> Edit Profile
+             </Button>
+          </div>
+        }
+      >
+        <div className="space-y-8">
+          <div className="flex flex-col items-center text-center gap-4 bg-muted/20 p-8 rounded-3xl border border-border/50">
+            <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-4xl font-bold text-primary shadow-inner">
+              {selectedCustomer?.fullName.charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-foreground">{selectedCustomer?.fullName}</h3>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold tracking-widest uppercase">
+                  {selectedCustomer?.customerCode}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6 px-2">
+            <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-1">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Phone</p>
+                 <p className="text-sm font-medium flex items-center gap-2">
+                   <Phone className="h-3.5 w-3.5 text-primary" /> {selectedCustomer?.phoneNumber}
+                 </p>
+               </div>
+               <div className="space-y-1">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Since</p>
+                 <p className="text-sm font-medium flex items-center gap-2">
+                   <Calendar className="h-3.5 w-3.5 text-primary" /> 
+                   {selectedCustomer ? new Date(selectedCustomer.createdAt).toLocaleDateString() : '-'}
+                 </p>
+               </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Address</p>
+              <p className="text-sm font-medium flex items-start gap-2">
+                <MapPin className="h-3.5 w-3.5 text-primary mt-1" /> {selectedCustomer?.address || "No address provided"}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Internal Notes</p>
+              <p className="text-sm font-medium italic text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-2xl border border-dashed">
+                {selectedCustomer?.notes || "No additional notes recorded for this customer."}
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t">
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Quick Stats</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm flex flex-col gap-1">
+                <Wrench className="h-4 w-4 text-orange-500" />
+                <span className="text-2xl font-bold">0</span>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Repairs</span>
+              </div>
+              <div className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm flex flex-col gap-1">
+                <DollarSign className="h-4 w-4 text-green-500" />
+                <span className="text-2xl font-bold">$0.00</span>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Spent</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Drawer>
+
+      {/* Delete Confirmation Modal (Kept as modal as it's a small confirmation) */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -283,74 +380,8 @@ export default function CustomersPage() {
             <p className="font-bold text-lg">Are you absolutely sure?</p>
             <p className="text-muted-foreground">
               You are about to delete <span className="font-semibold text-foreground">{selectedCustomer?.fullName}</span>. 
-              This action cannot be undone and will remove all associated history.
+              This will remove all associated history.
             </p>
-          </div>
-        </div>
-      </Modal>
-
-      {/* View Details Modal */}
-      <Modal
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        title="Customer Profile"
-        size="lg"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
-                {selectedCustomer?.fullName.charAt(0)}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold">{selectedCustomer?.fullName}</h3>
-                <p className="text-primary font-medium">{selectedCustomer?.customerCode}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4">
-              <div className="flex items-start gap-3">
-                <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold">Phone</p>
-                  <p className="font-medium">{selectedCustomer?.phoneNumber}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold">Address</p>
-                  <p className="font-medium">{selectedCustomer?.address || "No address provided"}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Notebook className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold">Internal Notes</p>
-                  <p className="font-medium text-sm italic text-muted-foreground">{selectedCustomer?.notes || "No notes recorded"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-muted/30 rounded-2xl p-6 border border-border/50">
-            <h4 className="font-bold mb-4 flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Quick Summary
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm">
-                <p className="text-xs text-muted-foreground font-bold">Total Repairs</p>
-                <p className="text-2xl font-bold text-primary">0</p>
-              </div>
-              <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm">
-                <p className="text-xs text-muted-foreground font-bold">Total Spent</p>
-                <p className="text-2xl font-bold text-green-600">$0.00</p>
-              </div>
-            </div>
-            <div className="mt-6">
-               <p className="text-xs text-muted-foreground font-bold uppercase mb-2">Member Since</p>
-               <p className="font-medium">{selectedCustomer ? new Date(selectedCustomer.createdAt).toLocaleDateString() : '-'}</p>
-            </div>
           </div>
         </div>
       </Modal>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoiceService } from "@/services/finance.service";
-import { Plus, Search, Filter, Printer, FileText, Download } from "lucide-react";
+import { Plus, Search, Filter, FileText, Eye, Download } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -14,11 +14,11 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchInvoices();
-  }, [page, search]);
+  }, [page, search, limit]);
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -36,8 +36,8 @@ export default function InvoicesPage() {
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader 
-        title="Invoices" 
-        description="Manage billing, print invoices, and track payments."
+        title="Billing & Invoices" 
+        description="Manage customer billing, invoices, and payment statuses."
         action={
           <Button variant="primary">
             <Plus className="h-5 w-5" /> Create Invoice
@@ -52,7 +52,7 @@ export default function InvoicesPage() {
             <div className="w-72">
               <Input
                 type="text"
-                placeholder="Search invoice number..."
+                placeholder="Search invoice number or customer..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 icon={<Search className="h-4 w-4" />}
@@ -71,8 +71,8 @@ export default function InvoicesPage() {
               <TableHead>Invoice No.</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Grand Total</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -86,32 +86,36 @@ export default function InvoicesPage() {
             ) : invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  <FileText className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
                   No invoices found.
                 </TableCell>
               </TableRow>
             ) : (
-              invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-bold text-primary">{invoice.invoiceNumber}</TableCell>
-                  <TableCell>
-                    <div className="font-medium text-foreground">{invoice.customer?.fullName || 'Unknown'}</div>
-                    <div className="text-xs text-muted-foreground">{invoice.repairJob?.jobNumber && `Ref: ${invoice.repairJob.jobNumber}`}</div>
-                  </TableCell>
-                  <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    ${Number(invoice.grandTotal).toFixed(2)}
+              invoices.map((inv) => (
+                <TableRow key={inv.id}>
+                  <TableCell className="font-bold text-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    {inv.invoiceNumber}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={invoice.paymentStatus} />
+                    <div className="font-semibold">{inv.customer?.fullName}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-tight">Code: {inv.customer?.customerCode}</div>
+                  </TableCell>
+                  <TableCell className="text-sm font-medium text-muted-foreground">
+                    {new Date(inv.invoiceDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={inv.paymentStatus} />
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-green-600 dark:text-green-400">
+                    ${Number(inv.grandTotal).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Download PDF">
-                        <Download className="h-4 w-4" />
+                      <Button variant="ghost" size="icon">
+                        <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" title="Print">
-                        <Printer className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/5">
+                        <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -121,11 +125,12 @@ export default function InvoicesPage() {
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         <Pagination 
           page={page} 
           totalPages={Math.ceil(total / limit)} 
+          limit={limit}
           onPageChange={setPage} 
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
         />
       </div>
     </div>
