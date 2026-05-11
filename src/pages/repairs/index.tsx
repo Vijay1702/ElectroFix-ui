@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { repairService } from "@/services/repair.service";
-import { Plus, Search, Filter, Calendar, Eye, FileEdit, Smartphone, User, Wrench, Clock, CheckCircle2 } from "lucide-react";
+import { customerService } from "@/services/customer.service";
+import { userService } from "@/services/user.service";
+import { Plus, Search, Filter, Calendar, Eye, Smartphone, CheckCircle2, FileEdit } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -19,13 +21,35 @@ export default function RepairsPage() {
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
 
+  // Dropdown States
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [techniciansList, setTechniciansList] = useState<any[]>([]);
+
   // Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedRepair, setSelectedRepair] = useState<any>(null);
+  
+  const [formData, setFormData] = useState({
+    customerId: "",
+    expectedDeliveryDate: "",
+    technicianId: "",
+    deviceType: "",
+    brand: "",
+    model: "",
+    problemDescription: ""
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchRepairs();
   }, [page, search, limit]);
+
+  useEffect(() => {
+    // Fetch dropdown data once
+    customerService.getCustomers(1, 100).then(res => setCustomersList(res.data)).catch(console.error);
+    userService.getUsers(1, 100, "", "TECHNICIAN").then(res => setTechniciansList(res.data || res)).catch(console.error);
+  }, []);
 
   const fetchRepairs = async () => {
     setLoading(true);
@@ -41,8 +65,64 @@ export default function RepairsPage() {
   };
 
   const handleOpenDrawer = (repair: any = null) => {
-    setSelectedRepair(repair);
+    setErrors({});
+    if (repair) {
+      setSelectedRepair(repair);
+      setFormData({
+        customerId: repair.customerId || "",
+        expectedDeliveryDate: repair.expectedDeliveryDate ? new Date(repair.expectedDeliveryDate).toISOString().split('T')[0] : "",
+        technicianId: repair.technicianId || "",
+        deviceType: repair.deviceType || "",
+        brand: repair.brand || "",
+        model: repair.model || "",
+        problemDescription: repair.problemDescription || ""
+      });
+    } else {
+      setSelectedRepair(null);
+      setFormData({
+        customerId: "",
+        expectedDeliveryDate: "",
+        technicianId: "",
+        deviceType: "",
+        brand: "",
+        model: "",
+        problemDescription: ""
+      });
+    }
     setIsDrawerOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.customerId) newErrors.customerId = "Client Name is required";
+    if (!formData.technicianId) newErrors.technicianId = "Assigned To is required";
+    if (!formData.deviceType?.trim()) newErrors.deviceType = "Device Type is required";
+    if (!formData.problemDescription?.trim()) newErrors.problemDescription = "Problem Description is required";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
+    setSubmitting(true);
+    try {
+      if (selectedRepair) {
+        await repairService.updateRepair(selectedRepair.id, formData);
+      } else {
+        await repairService.createRepair(formData);
+      }
+      setIsDrawerOpen(false);
+      fetchRepairs();
+    } catch (error) {
+      console.error("Save failed", error);
+      alert("Failed to save repair job.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -156,7 +236,9 @@ export default function RepairsPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
-            <Button variant="primary">{selectedRepair ? "Save Changes" : "Create Job Ticket"}</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? "Saving..." : selectedRepair ? "Save Changes" : "Create Job Ticket"}
+            </Button>
           </>
         }
       >
@@ -180,32 +262,51 @@ export default function RepairsPage() {
               <div className="space-y-6">
                  <div className="space-y-4">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Customer Information</label>
-                    <div className="space-y-3">
-                       <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/50 shadow-sm">
-                          <User className="h-4 w-4 text-primary" />
-                          <div>
-                             <p className="text-[10px] text-muted-foreground font-bold uppercase">Client Name</p>
-                             <p className="text-sm font-semibold">{selectedRepair?.customer?.fullName || "Select Customer..."}</p>
-                          </div>
+                    <div className="space-y-4">
+                       <div className="space-y-1.5">
+                          <Label required>Client Name</Label>
+                          <select 
+                            className={`flex h-11 w-full rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 appearance-none ${errors.customerId ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
+                            value={formData.customerId}
+                            onChange={(e) => {
+                              setFormData({...formData, customerId: e.target.value});
+                              if (errors.customerId) setErrors({...errors, customerId: ""});
+                            }}
+                          >
+                             <option value="" disabled>Select Customer...</option>
+                             {customersList.map(c => (
+                               <option key={c.id} value={c.id}>{c.fullName}</option>
+                             ))}
+                          </select>
+                          {errors.customerId && <p className="text-[10px] text-destructive mt-1.5 font-medium">{errors.customerId}</p>}
                        </div>
-                       <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/50 shadow-sm">
-                          <Clock className="h-4 w-4 text-primary" />
-                          <div>
-                             <p className="text-[10px] text-muted-foreground font-bold uppercase">Expected Delivery</p>
-                             <p className="text-sm font-semibold">{selectedRepair?.expectedDeliveryDate ? new Date(selectedRepair.expectedDeliveryDate).toLocaleDateString() : "Not Set"}</p>
-                          </div>
-                       </div>
+                       <Input 
+                          type="date" 
+                          label="Expected Delivery" 
+                          value={formData.expectedDeliveryDate}
+                          onChange={(e) => setFormData({...formData, expectedDeliveryDate: e.target.value})}
+                       />
                     </div>
                  </div>
 
                  <div className="space-y-4">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Technician Assigned</label>
-                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/50 shadow-sm">
-                       <Wrench className="h-4 w-4 text-primary" />
-                       <div className="flex-1">
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned To</p>
-                          <p className="text-sm font-semibold">{selectedRepair?.technician?.fullName || "Unassigned"}</p>
-                       </div>
+                    <div className="space-y-1.5">
+                       <Label required>Assigned To</Label>
+                       <select 
+                          className={`flex h-11 w-full rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 appearance-none ${errors.technicianId ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
+                          value={formData.technicianId}
+                          onChange={(e) => {
+                            setFormData({...formData, technicianId: e.target.value});
+                            if (errors.technicianId) setErrors({...errors, technicianId: ""});
+                          }}
+                        >
+                          <option value="" disabled>Unassigned</option>
+                          {techniciansList.map(t => (
+                            <option key={t.id} value={t.id}>{t.fullName}</option>
+                          ))}
+                       </select>
+                       {errors.technicianId && <p className="text-[10px] text-destructive mt-1.5 font-medium">{errors.technicianId}</p>}
                     </div>
                  </div>
               </div>
@@ -215,10 +316,30 @@ export default function RepairsPage() {
                   <div className="space-y-4">
                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Device Details</label>
                      <div className="grid gap-4">
-                        <Input label="Device Type" required placeholder="e.g. Smartphone" defaultValue={selectedRepair?.deviceType} />
+                        <Input 
+                          label="Device Type" 
+                          required 
+                          placeholder="e.g. Smartphone" 
+                          value={formData.deviceType}
+                          onChange={(e) => {
+                            setFormData({...formData, deviceType: e.target.value});
+                            if (errors.deviceType) setErrors({...errors, deviceType: ""});
+                          }}
+                          error={errors.deviceType}
+                        />
                         <div className="grid grid-cols-2 gap-4">
-                          <Input label="Brand" placeholder="e.g. Samsung" defaultValue={selectedRepair?.brand} />
-                          <Input label="Model" placeholder="e.g. Galaxy S21" defaultValue={selectedRepair?.model} />
+                          <Input 
+                            label="Brand" 
+                            placeholder="e.g. Samsung" 
+                            value={formData.brand}
+                            onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                          />
+                          <Input 
+                            label="Model" 
+                            placeholder="e.g. Galaxy S21" 
+                            value={formData.model}
+                            onChange={(e) => setFormData({...formData, model: e.target.value})}
+                          />
                         </div>
                      </div>
                   </div>
@@ -228,7 +349,12 @@ export default function RepairsPage() {
                        label="Problem Description"
                        required
                        placeholder="Describe the issue in detail..."
-                       defaultValue={selectedRepair?.problemDescription}
+                       value={formData.problemDescription}
+                       onChange={(e) => {
+                         setFormData({...formData, problemDescription: e.target.value});
+                         if (errors.problemDescription) setErrors({...errors, problemDescription: ""});
+                       }}
+                       error={errors.problemDescription}
                      />
                   </div>
               </div>

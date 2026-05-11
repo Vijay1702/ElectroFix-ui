@@ -21,6 +21,19 @@ export default function ProductsPage() {
   // Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    brand: "",
+    categoryId: "",
+    purchasePrice: "",
+    sellingPrice: "",
+    stockQuantity: "",
+    minimumStock: "",
+    description: ""
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -40,8 +53,78 @@ export default function ProductsPage() {
   };
 
   const handleOpenDrawer = (product: any = null) => {
-    setSelectedProduct(product);
+    setErrors({});
+    if (product) {
+      setSelectedProduct(product);
+      setFormData({
+        name: product.name || "",
+        brand: product.brand || "",
+        categoryId: product.categoryId || "",
+        purchasePrice: product.purchasePrice || "",
+        sellingPrice: product.sellingPrice || "",
+        stockQuantity: product.stockQuantity || "",
+        minimumStock: product.minimumStock || "",
+        description: product.description || ""
+      });
+    } else {
+      setSelectedProduct(null);
+      setFormData({
+        name: "",
+        brand: "",
+        categoryId: "",
+        purchasePrice: "",
+        sellingPrice: "",
+        stockQuantity: "",
+        minimumStock: "",
+        description: ""
+      });
+    }
     setIsDrawerOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.name?.trim()) newErrors.name = "Product Name is required";
+    if (!formData.purchasePrice) newErrors.purchasePrice = "Purchase Price is required";
+    if (!formData.sellingPrice) newErrors.sellingPrice = "Selling Price is required";
+    if (!formData.stockQuantity) newErrors.stockQuantity = "Stock Quantity is required";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
+    setSubmitting(true);
+    try {
+      if (selectedProduct) {
+        await productService.updateProduct(selectedProduct.id, {
+          ...formData,
+          purchasePrice: Number(formData.purchasePrice),
+          sellingPrice: Number(formData.sellingPrice),
+          stockQuantity: Number(formData.stockQuantity),
+          minimumStock: Number(formData.minimumStock)
+        });
+      } else {
+        await productService.createProduct({
+          ...formData,
+          purchasePrice: Number(formData.purchasePrice),
+          sellingPrice: Number(formData.sellingPrice),
+          stockQuantity: Number(formData.stockQuantity),
+          minimumStock: Number(formData.minimumStock)
+        });
+      }
+      setIsDrawerOpen(false);
+      fetchProducts();
+    } catch (error) {
+      console.error("Save failed", error);
+      alert("Failed to save product.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -178,7 +261,9 @@ export default function ProductsPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
-            <Button variant="primary">{selectedProduct ? "Update Product" : "Save Product"}</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? "Saving..." : selectedProduct ? "Update Product" : "Save Product"}
+            </Button>
           </>
         }
       >
@@ -190,21 +275,32 @@ export default function ProductsPage() {
                   label="Product Name" 
                   required 
                   placeholder="e.g. iPhone 13 OLED Display" 
-                  defaultValue={selectedProduct?.name} 
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({...formData, name: e.target.value});
+                    if (errors.name) setErrors({...errors, name: ""});
+                  }}
+                  error={errors.name}
                   icon={<Tag className="h-4 w-4" />} 
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <Input 
                     label="Brand" 
                     placeholder="e.g. Apple" 
-                    defaultValue={selectedProduct?.brand} 
+                    value={formData.brand}
+                    onChange={(e) => setFormData({...formData, brand: e.target.value})}
                   />
                   <div className="space-y-1.5">
                     <Label>Category</Label>
-                    <select className="flex h-11 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
-                       <option>Smartphones</option>
-                       <option>Laptops</option>
-                       <option>Tablets</option>
+                    <select 
+                      className="flex h-11 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary appearance-none"
+                      value={formData.categoryId}
+                      onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
+                    >
+                       <option value="">Select Category...</option>
+                       <option value="1">Smartphones</option>
+                       <option value="2">Laptops</option>
+                       <option value="3">Tablets</option>
                     </select>
                   </div>
                 </div>
@@ -219,7 +315,12 @@ export default function ProductsPage() {
                   required 
                   type="number" 
                   placeholder="0.00" 
-                  defaultValue={selectedProduct?.purchasePrice} 
+                  value={formData.purchasePrice}
+                  onChange={(e) => {
+                    setFormData({...formData, purchasePrice: e.target.value});
+                    if (errors.purchasePrice) setErrors({...errors, purchasePrice: ""});
+                  }}
+                  error={errors.purchasePrice}
                   icon={<DollarSign className="h-4 w-4" />} 
                 />
                 <Input 
@@ -227,7 +328,12 @@ export default function ProductsPage() {
                   required 
                   type="number" 
                   placeholder="0.00" 
-                  defaultValue={selectedProduct?.sellingPrice} 
+                  value={formData.sellingPrice}
+                  onChange={(e) => {
+                    setFormData({...formData, sellingPrice: e.target.value});
+                    if (errors.sellingPrice) setErrors({...errors, sellingPrice: ""});
+                  }}
+                  error={errors.sellingPrice}
                   icon={<DollarSign className="h-4 w-4" />} 
                 />
                 <Input 
@@ -235,14 +341,20 @@ export default function ProductsPage() {
                   required 
                   type="number" 
                   placeholder="0" 
-                  defaultValue={selectedProduct?.stockQuantity} 
+                  value={formData.stockQuantity}
+                  onChange={(e) => {
+                    setFormData({...formData, stockQuantity: e.target.value});
+                    if (errors.stockQuantity) setErrors({...errors, stockQuantity: ""});
+                  }}
+                  error={errors.stockQuantity}
                   icon={<Box className="h-4 w-4" />} 
                 />
                 <Input 
                   label="Min. Stock Alert" 
                   type="number" 
                   placeholder="5" 
-                  defaultValue={selectedProduct?.minimumStock} 
+                  value={formData.minimumStock}
+                  onChange={(e) => setFormData({...formData, minimumStock: e.target.value})}
                   icon={<AlertTriangle className="h-4 w-4" />} 
                 />
              </div>
@@ -252,7 +364,8 @@ export default function ProductsPage() {
              <TextArea 
                label="Description"
                placeholder="Enter product specifications or compatibility notes..."
-               defaultValue={selectedProduct?.description}
+               value={formData.description}
+               onChange={(e) => setFormData({...formData, description: e.target.value})}
              />
           </div>
         </div>

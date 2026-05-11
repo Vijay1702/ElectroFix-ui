@@ -15,6 +15,10 @@ export const API_ENDPOINTS = {
     HISTORY: "/customers/:id/history",
   },
 
+  USERS: {
+    GET_ALL: "/users",
+  },
+
   REPAIRS: {
     GET_ALL: "/repair-jobs",
     CREATE: "/repair-jobs",

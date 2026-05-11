@@ -5,10 +5,11 @@ import { Label } from "./Label";
 export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   required?: boolean;
+  error?: string;
 }
 
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
-  ({ className, label, required, ...props }, ref) => {
+  ({ className, label, required, error, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && <Label required={required}>{label}</Label>}
@@ -16,11 +17,15 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           required={required}
           className={cn(
-            "flex w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-50",
+            "flex w-full rounded-xl border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:ring-1 min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-50",
+            error 
+              ? "border-destructive focus:border-destructive focus:ring-destructive" 
+              : "border-border focus:border-primary focus:ring-primary",
             className
           )}
           {...props}
         />
+        {error && <p className="text-[10px] text-destructive mt-1.5 font-medium">{error}</p>}
       </div>
     );
   }

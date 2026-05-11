@@ -31,6 +31,7 @@ export default function CustomersPage() {
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchCustomers();
@@ -50,6 +51,7 @@ export default function CustomersPage() {
   };
 
   const handleOpenForm = (customer: any = null) => {
+    setErrors({});
     if (customer) {
       setSelectedCustomer(customer);
       setFormData({
@@ -77,6 +79,18 @@ export default function CustomersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required";
+    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Phone Number is required";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
     setSubmitting(true);
     try {
       if (selectedCustomer) {
@@ -231,7 +245,11 @@ export default function CustomersPage() {
                 required
                 placeholder="e.g. John Doe"
                 value={formData.fullName}
-                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, fullName: e.target.value});
+                  if (errors.fullName) setErrors({...errors, fullName: ""});
+                }}
+                error={errors.fullName}
                 icon={<User className="h-4 w-4" />}
               />
               <Input 
@@ -239,7 +257,11 @@ export default function CustomersPage() {
                 required
                 placeholder="e.g. +91 98400 12345"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, phoneNumber: e.target.value});
+                  if (errors.phoneNumber) setErrors({...errors, phoneNumber: ""});
+                }}
+                error={errors.phoneNumber}
                 icon={<Phone className="h-4 w-4" />}
               />
             </div>
