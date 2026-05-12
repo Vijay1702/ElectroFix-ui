@@ -27,5 +27,10 @@ export const productService = {
   deleteProduct: async (id: string) => {
     const response = await axiosInstance.delete(`${API_ENDPOINTS.PRODUCTS.DELETE}/${id}`);
     return response.data.data;
+  },
+
+  getCategories: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.CATEGORIES.GET_ALL);
+    return response.data;
   }
 };

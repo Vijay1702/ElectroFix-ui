@@ -7,8 +7,8 @@ import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
-import { Modal } from "@/components/shared/Modal";
 import { Drawer } from "@/components/shared/Drawer";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -179,22 +179,35 @@ export default function CustomersPage() {
               </TableRow>
             ) : (
               customers.map((customer) => (
-                <TableRow key={customer.id}>
+                <TableRow 
+                  key={customer.id}
+                  className="group hover:bg-primary/5 transition-colors cursor-default"
+                >
                   <TableCell 
-                    className="font-medium text-primary cursor-pointer hover:underline"
+                    className="font-black text-primary cursor-pointer"
                     onClick={() => handleOpenView(customer)}
                   >
-                    {customer.customerCode}
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <span>{customer.customerCode}</span>
+                    </div>
                   </TableCell>
-                  <TableCell className="font-semibold">{customer.fullName}</TableCell>
-                  <TableCell>{customer.phoneNumber}</TableCell>
-                  <TableCell className="text-muted-foreground truncate max-w-xs">{customer.address || '-'}</TableCell>
+                  <TableCell className="font-bold text-foreground text-sm">{customer.fullName}</TableCell>
+                  <TableCell className="font-semibold text-sm">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5" />
+                      <span>{customer.phoneNumber}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-medium text-xs truncate max-w-xs">{customer.address || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
                         onClick={() => handleOpenForm(customer)}
                       >
                         <FileEdit className="h-4 w-4" />
@@ -202,7 +215,7 @@ export default function CustomersPage() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
                         onClick={() => { setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -296,16 +309,9 @@ export default function CustomersPage() {
         title="Customer Profile"
         size="md"
         footer={
-          <div className="flex w-full justify-between items-center">
-             <Button 
-               variant="ghost" 
-               className="text-destructive hover:bg-destructive/10"
-               onClick={() => setIsDeleteModalOpen(true)}
-             >
-               <Trash2 className="h-4 w-4 mr-2" /> Delete
-             </Button>
-             <Button variant="outline" onClick={() => handleOpenForm(selectedCustomer)}>
-               <FileEdit className="h-4 w-4 mr-2" /> Edit Profile
+          <div className="flex w-full justify-end">
+             <Button variant="outline" onClick={() => setIsViewDrawerOpen(false)}>
+               Close Profile
              </Button>
           </div>
         }
@@ -367,7 +373,7 @@ export default function CustomersPage() {
               </div>
               <div className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm flex flex-col gap-1">
                 <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-2xl font-bold">$0.00</span>
+                <span className="text-2xl font-bold">₹0.00</span>
                 <span className="text-[10px] text-muted-foreground font-bold uppercase">Spent</span>
               </div>
             </div>
@@ -375,33 +381,17 @@ export default function CustomersPage() {
         </div>
       </Drawer>
 
-      {/* Delete Confirmation Modal (Kept as modal as it's a small confirmation) */}
-      <Modal
+      {/* Delete Confirmation Modal */}
+      <ConfirmDialog
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        title="Confirm Delete"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete} disabled={submitting}>
-              {submitting ? "Deleting..." : "Delete Customer"}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="h-16 w-16 bg-destructive/10 rounded-full flex items-center justify-center text-destructive">
-            <Trash2 className="h-8 w-8" />
-          </div>
-          <div>
-            <p className="font-bold text-lg">Are you absolutely sure?</p>
-            <p className="text-muted-foreground">
-              You are about to delete <span className="font-semibold text-foreground">{selectedCustomer?.fullName}</span>. 
-              This will remove all associated history.
-            </p>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={handleDelete}
+        title="Delete Customer Profile"
+        description={`Are you sure you want to delete ${selectedCustomer?.fullName}? This will permanently remove their profile and all associated repair history.`}
+        confirmText="Delete"
+        variant="danger"
+        icon="delete"
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ interface SearchableSelectProps {
   required?: boolean;
   error?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function SearchableSelect({
@@ -28,6 +29,7 @@ export function SearchableSelect({
   required,
   error,
   className,
+  disabled,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,9 +58,10 @@ export function SearchableSelect({
       <div className="relative">
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
           className={cn(
-            "flex h-11 w-full items-center justify-between rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1",
+            "flex h-11 w-full items-center justify-between rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
             error 
               ? "border-destructive focus:border-destructive focus:ring-destructive" 
               : "border-border focus:border-primary focus:ring-primary",

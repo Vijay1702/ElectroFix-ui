@@ -105,7 +105,7 @@ export default function PaymentsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                      +${Number(pmt.paymentAmount).toFixed(2)}
+                      +₹{Number(pmt.paymentAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

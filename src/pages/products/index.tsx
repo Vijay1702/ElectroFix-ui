@@ -10,6 +10,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -18,10 +19,14 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   // Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -38,12 +43,17 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, search, limit]);
+    
+    // Fetch categories
+    productService.getCategories()
+      .then(res => setCategories(res.data || []))
+      .catch(err => console.error("Failed to fetch categories", err));
+  }, [page, search, limit, categoryFilter]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await productService.getProducts(page, limit, search);
+      const res = await productService.getProducts(page, limit, search, categoryFilter);
       setProducts(res.data);
       setTotal(res.total);
     } catch (error) {
@@ -53,8 +63,9 @@ export default function ProductsPage() {
     }
   };
 
-  const handleOpenDrawer = (product: any = null) => {
+  const handleOpenDrawer = (product: any = null, readOnly = false) => {
     setErrors({});
+    setIsReadOnly(readOnly);
     if (product) {
       setSelectedProduct(product);
       setFormData({
@@ -92,6 +103,7 @@ export default function ProductsPage() {
     if (!formData.purchasePrice) newErrors.purchasePrice = "Purchase Price is required";
     if (!formData.sellingPrice) newErrors.sellingPrice = "Selling Price is required";
     if (!formData.stockQuantity) newErrors.stockQuantity = "Stock Quantity is required";
+    if (!formData.categoryId) newErrors.categoryId = "Category is required";
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -128,13 +140,24 @@ export default function ProductsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await productService.deleteProduct(id);
+      setDeleteConfirmId(null);
+      fetchProducts();
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert("Failed to delete product.");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader 
         title="Products & Inventory" 
         description="Manage your shop inventory, spare parts, and accessories."
         action={
-          <Button variant="primary" onClick={() => handleOpenDrawer()}>
+          <Button variant="primary" onClick={() => handleOpenDrawer(null, false)}>
             <Plus className="h-5 w-5" /> Add Product
           </Button>
         }
@@ -148,7 +171,7 @@ export default function ProductsPage() {
         <div className="card-container border-l-4 border-l-green-500 py-6">
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Stock Value</h3>
           <p className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">
-            ${products.reduce((acc, p) => acc + (Number(p.purchasePrice) * p.stockQuantity), 0).toFixed(2)}
+            ₹{products.reduce((acc, p) => acc + (Number(p.purchasePrice) * p.stockQuantity), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="card-container border-l-4 border-l-red-500 py-6">
@@ -174,9 +197,24 @@ export default function ProductsPage() {
                 icon={<Search className="h-4 w-4" />}
               />
             </div>
-            <Button variant="outline" className="hidden sm:flex">
-              <Filter className="h-4 w-4" /> Category Filter
-            </Button>
+            <div className="w-48">
+              <select
+                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                value={categoryFilter}
+                onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem center',
+                  backgroundSize: '1.25rem'
+                }}
+              >
+                <option value="">All Categories</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -207,37 +245,60 @@ export default function ProductsPage() {
               </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow 
+                  key={product.id}
+                  className="group hover:bg-primary/5 transition-colors cursor-default"
+                >
                   <TableCell 
-                    className="cursor-pointer hover:underline"
-                    onClick={() => handleOpenDrawer(product)}
+                    className="cursor-pointer"
+                    onClick={() => handleOpenDrawer(product, true)}
                   >
-                    <div className="font-bold text-primary">{product.name}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-tight">Code: {product.productCode} | Brand: {product.brand || 'N/A'}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-primary text-sm">{product.name}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Code: {product.productCode}</div>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <span className="px-2.5 py-1 bg-secondary/50 text-secondary-foreground rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    <span className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-md text-[10px] font-black uppercase tracking-[0.2em]">
                       {product.category?.name || 'Spare Parts'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="text-xs font-medium text-muted-foreground">P: ${Number(product.purchasePrice).toFixed(2)}</div>
-                    <div className="text-sm font-bold text-green-600 dark:text-green-400">S: ${Number(product.sellingPrice).toFixed(2)}</div>
+                    <div className="text-xs font-semibold text-muted-foreground">Cost: ₹{Number(product.purchasePrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                    <div className="text-sm font-black text-green-600 dark:text-green-400">Sale: ₹{Number(product.sellingPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className={`inline-flex flex-col items-center justify-center ${product.stockQuantity <= product.minimumStock ? 'text-red-500' : 'text-foreground'}`}>
-                      <span className="text-lg font-bold">{product.stockQuantity}</span>
+                      <span className="text-lg font-black">{product.stockQuantity}</span>
                       {product.stockQuantity <= product.minimumStock && (
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-red-500">Alert</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-red-500 animate-pulse">Low</span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenDrawer(product)} className="text-blue-500 hover:bg-blue-50">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleOpenDrawer(product, false)} 
+                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                      >
                         <Edit3 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(product.id);
+                        }}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -261,20 +322,57 @@ export default function ProductsPage() {
       <Drawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        title={selectedProduct ? "Edit Product" : "Add New Product"}
+        title={selectedProduct ? (isReadOnly ? "Product Information" : "Edit Product") : "Add New Product"}
         footer={
           <>
-            <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Saving..." : selectedProduct ? "Update Product" : "Save Product"}
+            <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>
+              {isReadOnly ? "Close" : "Cancel"}
             </Button>
+            {!isReadOnly && (
+              <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? "Saving..." : selectedProduct ? "Update Product" : "Save Product"}
+              </Button>
+            )}
           </>
         }
       >
-        <div className="space-y-8">
-          <div className="space-y-4">
+        <div className="space-y-10 pb-8">
+          {isReadOnly && selectedProduct && (
+            <div className="flex gap-6 items-center bg-primary/5 rounded-2xl p-6 border border-primary/10">
+               <div className={`p-4 rounded-xl ${formData.stockQuantity <= formData.minimumStock ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                 <Box className="h-8 w-8" />
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Inventory Level</p>
+                 <h4 className="text-2xl font-bold">{formData.stockQuantity} Units <span className="text-sm font-medium text-muted-foreground ml-2">in stock</span></h4>
+               </div>
+            </div>
+          )}
+
+          <div className="space-y-6">
              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Product Basics</label>
-             <div className="grid gap-4">
+             
+             {isReadOnly ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-1">
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Product Name</p>
+                   <p className="text-lg font-bold">{formData.name}</p>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Brand</p>
+                     <p className="text-base font-bold">{formData.brand || 'N/A'}</p>
+                   </div>
+                   <div>
+                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Category</p>
+                     <p className="text-base font-bold underline decoration-primary/30 underline-offset-4">
+                       {categories.find(c => c.id === formData.categoryId)?.name || 'Spare Parts'}
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             ) : (
+               <div className="grid gap-4">
                 <Input 
                   label="Product Name" 
                   required 
@@ -296,21 +394,46 @@ export default function ProductsPage() {
                   />
                   <SearchableSelect
                     label="Category"
-                    options={[
-                      { value: "1", label: "Smartphones" },
-                      { value: "2", label: "Laptops" },
-                      { value: "3", label: "Tablets" },
-                    ]}
+                    required
+                    options={categories.map(c => ({ value: c.id, label: c.name }))}
                     value={formData.categoryId}
-                    onChange={(val) => setFormData({...formData, categoryId: val})}
+                    onChange={(val) => {
+                      setFormData({...formData, categoryId: val});
+                      if (errors.categoryId) setErrors({...errors, categoryId: ""});
+                    }}
+                    error={errors.categoryId}
                   />
                 </div>
-             </div>
+               </div>
+             )}
           </div>
 
-          <div className="space-y-4 pt-6 border-t">
-             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Pricing & Stock</label>
-             <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6 pt-6 border-t">
+             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Pricing & Stock Levels</label>
+             
+             {isReadOnly ? (
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-1">
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Purchase Price</p>
+                   <p className="text-base font-bold text-muted-foreground">${Number(formData.purchasePrice).toFixed(2)}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Selling Price</p>
+                   <p className="text-xl font-bold text-green-600 dark:text-green-400">${Number(formData.sellingPrice).toFixed(2)}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Current Stock</p>
+                   <p className={`text-base font-bold ${formData.stockQuantity <= formData.minimumStock ? 'text-red-500' : ''}`}>
+                     {formData.stockQuantity}
+                   </p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Min. Alert</p>
+                   <p className="text-base font-bold">{formData.minimumStock}</p>
+                 </div>
+               </div>
+             ) : (
+               <div className="grid grid-cols-2 gap-4">
                 <Input 
                   label="Purchase Price" 
                   required 
@@ -358,19 +481,39 @@ export default function ProductsPage() {
                   onChange={(e) => setFormData({...formData, minimumStock: e.target.value})}
                   icon={<AlertTriangle className="h-4 w-4" />} 
                 />
-             </div>
+               </div>
+             )}
           </div>
 
-          <div className="space-y-4 pt-6 border-t">
-             <TextArea 
-               label="Description"
-               placeholder="Enter product specifications or compatibility notes..."
-               value={formData.description}
-               onChange={(e) => setFormData({...formData, description: e.target.value})}
-             />
+          <div className="space-y-6 pt-6 border-t">
+             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Additional Details</label>
+             {isReadOnly ? (
+               <div className="bg-muted/30 rounded-xl p-4 border italic text-muted-foreground text-sm leading-relaxed">
+                 {formData.description || 'No description provided.'}
+               </div>
+             ) : (
+               <TextArea 
+                 label="Description"
+                 placeholder="Enter product specifications or compatibility notes..."
+                 value={formData.description}
+                 onChange={(e) => setFormData({...formData, description: e.target.value})}
+               />
+             )}
           </div>
         </div>
       </Drawer>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+        title="Delete Inventory Item"
+        description="Are you sure you want to remove this item from your inventory? This action is permanent and will affect stock calculations for future repairs."
+        confirmText="Delete"
+        variant="danger"
+        icon="delete"
+      />
     </div>
   );
 }

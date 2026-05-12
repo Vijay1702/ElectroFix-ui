@@ -7,5 +7,9 @@ export const userService = {
       params: { page, limit, search, role }
     });
     return response.data;
+  },
+  createUser: async (data: any) => {
+    const response = await axiosInstance.post(API_ENDPOINTS.USERS.CREATE, data);
+    return response.data.data;
   }
 };
