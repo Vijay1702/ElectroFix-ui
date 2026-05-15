@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { dashboardService } from "@/services/dashboard.service";
+import { notificationService } from "@/services/notification.service";
+import { toast } from "sonner";
 import { 
-  Wrench, CheckCircle, DollarSign, AlertCircle, 
-  PlusCircle, UserPlus, FileText, CreditCard, ArrowUpRight,
-  TrendingUp, Activity, Users, Box, Zap, Search, Bell, ShieldCheck
+  Wrench, CheckCircle, DollarSign, 
+  FileText, CreditCard, ArrowUpRight,
+  TrendingUp, Activity, Users, Box, Zap, ShieldCheck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/shared/Button";
@@ -41,7 +43,28 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
+
+    const handleNotifications = async () => {
+      if (!user) return;
+      try {
+        const res = await notificationService.getUnreadNotifications();
+        const unread = res.data.notifications || [];
+        
+        unread.forEach((note: any) => {
+          toast.success(note.title, {
+            description: note.message,
+            duration: 8000,
+          });
+          // Mark as read so it doesn't show again on next refresh/login
+          notificationService.markAsRead(note.id);
+        });
+      } catch (error) {
+        console.error("Notification sync failed", error);
+      }
+    };
+
     fetchDashboard();
+    handleNotifications();
   }, [user]);
 
   if (loading) {

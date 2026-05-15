@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { customerService } from "@/services/customer.service";
-import { Plus, Search, FileEdit, Trash2, Eye, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
+import { Plus, Search, FileEdit, Trash2, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";

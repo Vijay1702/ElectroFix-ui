@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { userService } from "@/services/user.service";
 import { 
-  Plus, Search, UserPlus, Mail, Phone, 
+  UserPlus, Mail, Phone, 
   Shield, Trash2, Edit, User, Lock, 
-  CheckCircle2, AlertCircle 
+  AlertCircle, Users 
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";

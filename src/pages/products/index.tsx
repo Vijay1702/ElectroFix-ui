@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
 import { productService } from "@/services/product.service";
-import { Plus, Search, Filter, AlertTriangle, Edit3, Trash2, Package, Tag, DollarSign, Box } from "lucide-react";
+import { Plus, Search, AlertTriangle, Edit3, Trash2, Package, Tag, DollarSign, Box } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
-import { Label } from "@/components/shared/Label";
 import { Pagination } from "@/components/shared/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
 import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function ProductsPage() {
+  const { user } = useAuth();
+  const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isAdmin = userRole === "ADMIN";
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -157,9 +162,11 @@ export default function ProductsPage() {
         title="Products & Inventory" 
         description="Manage your shop inventory, spare parts, and accessories."
         action={
-          <Button variant="primary" onClick={() => handleOpenDrawer(null, false)}>
-            <Plus className="h-5 w-5" /> Add Product
-          </Button>
+          isAdmin && (
+            <Button variant="primary" onClick={() => handleOpenDrawer(null, false)}>
+              <Plus className="h-5 w-5" /> Add Product
+            </Button>
+          )
         }
       />
 
@@ -168,12 +175,14 @@ export default function ProductsPage() {
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Inventory Items</h3>
           <p className="text-3xl font-bold mt-2">{total}</p>
         </div>
-        <div className="card-container border-l-4 border-l-green-500 py-6">
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Stock Value</h3>
-          <p className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">
-            ₹{products.reduce((acc, p) => acc + (Number(p.purchasePrice) * p.stockQuantity), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-          </p>
-        </div>
+        {isAdmin && (
+          <div className="card-container border-l-4 border-l-green-500 py-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Stock Value</h3>
+            <p className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">
+              ₹{products.reduce((acc, p) => acc + (Number(p.purchasePrice) * p.stockQuantity), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        )}
         <div className="card-container border-l-4 border-l-red-500 py-6">
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
             Low Stock <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -226,7 +235,7 @@ export default function ProductsPage() {
               <TableHead>Category</TableHead>
               <TableHead className="text-right">Prices</TableHead>
               <TableHead className="text-center">Stock Level</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -269,7 +278,7 @@ export default function ProductsPage() {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="text-xs font-semibold text-muted-foreground">Cost: ₹{Number(product.purchasePrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                    {isAdmin && <div className="text-xs font-semibold text-muted-foreground">Cost: ₹{Number(product.purchasePrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>}
                     <div className="text-sm font-black text-green-600 dark:text-green-400">Sale: ₹{Number(product.sellingPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                   </TableCell>
                   <TableCell className="text-center">
@@ -280,29 +289,31 @@ export default function ProductsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleOpenDrawer(product, false)} 
-                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmId(product.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleOpenDrawer(product, false)} 
+                          className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(product.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -413,10 +424,12 @@ export default function ProductsPage() {
              
              {isReadOnly ? (
                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-1">
-                 <div>
-                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Purchase Price</p>
-                   <p className="text-base font-bold text-muted-foreground">${Number(formData.purchasePrice).toFixed(2)}</p>
-                 </div>
+                 {isAdmin && (
+                   <div>
+                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Purchase Price</p>
+                     <p className="text-base font-bold text-muted-foreground">${Number(formData.purchasePrice).toFixed(2)}</p>
+                   </div>
+                 )}
                  <div>
                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Selling Price</p>
                    <p className="text-xl font-bold text-green-600 dark:text-green-400">${Number(formData.sellingPrice).toFixed(2)}</p>
