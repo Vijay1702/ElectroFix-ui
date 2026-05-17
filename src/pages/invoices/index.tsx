@@ -4,7 +4,7 @@ import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
 import { repairService } from "@/services/repair.service";
 import { 
-  Plus, Search, Eye, Printer, 
+  Plus, Search, Eye, Printer, Download,
   Smartphone, Globe, 
   Receipt, X, Zap, 
   Calendar, Fingerprint
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
       <Drawer
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-        title="Official Audit Document"
+        title="Invoice Details"
         size="lg"
       >
         <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
@@ -666,9 +666,9 @@ export default function InvoicesPage() {
                 <div className="px-10 py-10 border-b border-slate-100 dark:border-zinc-800 bg-gradient-to-b from-slate-50/80 to-white dark:from-zinc-900/50 dark:to-zinc-950">
                    <div className="flex justify-between items-start mb-10">
                       <div className="space-y-2">
-                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20 mb-2">
-                            <Receipt className="h-3.5 w-3.5 text-indigo-600" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Financial Record</span>
+                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/15 mb-2">
+                            <Receipt className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Official Invoice</span>
                          </div>
                          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                             {selectedInvoiceForView.invoiceNumber}
@@ -676,30 +676,30 @@ export default function InvoicesPage() {
                          <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
                             <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 opacity-60" /> {new Date(selectedInvoiceForView.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             <span className="h-1 w-1 rounded-full bg-slate-200"></span>
-                            <span className="flex items-center gap-1.5"><Fingerprint className="h-3.5 w-3.5 opacity-60" /> Verified Audit</span>
+                            <span className="flex items-center gap-1.5"><Fingerprint className="h-3.5 w-3.5 opacity-60" /> Verified Record</span>
                          </div>
                       </div>
                       <div className="flex flex-col items-end gap-3">
                          <StatusBadge status={selectedInvoiceForView.paymentStatus} />
                          <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-md border border-emerald-100 dark:border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-                            Authorized
+                            Authorized Invoice
                          </div>
                       </div>
                    </div>
                    
                    <div className="grid grid-cols-3 gap-10">
                       <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Receivable</p>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
                          <p className="text-xl font-black text-slate-900 dark:text-white tabular-nums">₹{Number(selectedInvoiceForView.grandTotal).toLocaleString('en-IN')}</p>
                       </div>
                       <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1.5">Settled</p>
+                         <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1.5">Amount Paid</p>
                          <p className="text-xl font-black text-emerald-600 tabular-nums">₹{Number(selectedInvoiceForView.paidAmount).toLocaleString('en-IN')}</p>
                       </div>
                       <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Gateway</p>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Payment Mode</p>
                          <p className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
+                            <div className="h-2 w-2 rounded-full bg-primary"></div>
                             {selectedInvoiceForView.notes?.split('Method: ')[1]?.split('.')[0] || 'CASH'}
                          </p>
                       </div>
@@ -732,12 +732,10 @@ export default function InvoicesPage() {
                       <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/30 rounded-3xl border border-slate-100 dark:border-zinc-800/50">
                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Merchant</h4>
                          <div className="space-y-3">
-                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">ElectroFix Solutions HQ</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Sri Senthil Spares & Services,</p>
                             <div className="space-y-2 pt-1">
-                               <div className="inline-flex items-center px-2 py-0.5 bg-slate-200 dark:bg-zinc-800 rounded text-[9px] font-black text-slate-600 dark:text-slate-400">
-                                  GSTIN: 33AAAAA0000A1Z5
-                               </div>
-                               <p className="text-xs font-bold text-slate-500">Service Hub: Chennai, Tamil Nadu</p>
+
+                               <p className="text-xs font-bold text-slate-500">Thalayari street, Pattukkottai, thanjavur district, tamil nadu - 614601</p>
                             </div>
                          </div>
                       </div>

@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { LogIn, Mail, Lock, ShieldCheck, Sparkles } from "lucide-react";
-import logoImg from "@/assets/logo.jpg";
+import logoImg from "@/assets/logo.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -34,55 +34,86 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex bg-[#0A0A0B] overflow-hidden">
       {/* Left Decoration Side */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-primary overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-purple-600 opacity-90"></div>
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
-        
-        <div className="relative z-10 w-full h-full flex flex-col justify-center p-20 text-white">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md overflow-hidden border border-white/30 flex items-center justify-center">
-              <img src={logoImg} alt="Sri Senthil Spares & Services Logo" className="h-full w-full object-cover" />
-            </div>
-            <span className="text-2xl font-black tracking-tighter uppercase leading-none">Sri Senthil Spares</span>
+      <div className="hidden lg:flex lg:w-1/2 relative bg-zinc-950 overflow-hidden border-r border-zinc-900">
+        {/* Soft, studio radial glow centered behind the logo */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(12,185,193,0.1)_0%,transparent_60%)]"></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 2px 2px, rgba(0.54 0.07 194.6) 1px, transparent 0)",
+            backgroundSize: "40px 40px",
+          }}
+        ></div>
+
+        <div className="relative z-10 w-full h-full flex flex-col justify-center p-20">
+          <div className="mb-12 flex items-center justify-start">
+            <img
+              src={logoImg}
+              alt="Sri Senthil Spares & Services Logo"
+              className="h-32 w-auto object-contain hover:scale-[1.02] transition-transform duration-300 drop-shadow-[0_0_15px_rgba(12,185,193,0.15)]"
+            />
           </div>
-          
-          <h1 className="text-5xl font-bold leading-tight mb-6">
-            The Ultimate <br /> 
-            <span className="text-white/70">Spares & Services</span> <br />
+
+          <h1 className="text-5xl font-black leading-tight mb-6 text-white tracking-tight">
+            The Ultimate <br />
+            <span className="text-primary">Spares & Services</span> <br />
             Powerhouse.
           </h1>
-          <p className="text-lg text-white/60 max-w-lg leading-relaxed">
-            Surgical precision in managing your motors, fans, mixers, electrical equipment, inventory and services.
+          <p className="text-lg text-zinc-400 max-w-lg leading-relaxed font-medium">
+            Surgical precision in managing your motors, fans, mixers, electrical
+            equipment, inventory and services.
           </p>
 
-          <div className="mt-20 flex gap-10">
+          <div className="mt-20 flex gap-16">
             <div className="flex flex-col">
-              <span className="text-4xl font-bold">14+</span>
-              <span className="text-sm text-white/50 uppercase tracking-widest font-bold">Modules</span>
+              <span className="text-4xl font-black text-white">14+</span>
+              <span className="text-xs text-zinc-500 uppercase tracking-[0.2em] font-black mt-1">
+                Modules
+              </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-4xl font-bold">100%</span>
-              <span className="text-sm text-white/50 uppercase tracking-widest font-bold">Secure</span>
+              <span className="text-4xl font-black text-white">100%</span>
+              <span className="text-xs text-zinc-500 uppercase tracking-[0.2em] font-black mt-1">
+                Secure
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Animated Shapes */}
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-40 -right-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"></div>
+        {/* Subtle Decorative Gradient Blobs */}
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-40 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
       </div>
 
       {/* Right Login Side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-zinc-950">
-        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-zinc-950 relative overflow-hidden">
+        {/* Soft, studio radial glow centered behind the login card */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(12,185,193,0.1)_0%,transparent_60%)]"></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 2px 2px, rgba(0.54 0.07 194.6) 1px, transparent 0)",
+            backgroundSize: "40px 40px",
+          }}
+        ></div>
+        
+        <div className="relative z-10 w-full max-w-md animate-in fade-in slide-in-from-bottom-1 duration-700">
           <div className="mb-10 text-center lg:text-left">
             <div className="lg:hidden flex justify-center mb-6">
-               <div className="h-16 w-16 rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center shadow-lg">
-                 <img src={logoImg} alt="Sri Senthil Spares & Services Logo" className="h-full w-full object-cover" />
-               </div>
+              <div className="bg-white p-4 rounded-3xl shadow-xl border border-zinc-800/20 max-w-[200px]">
+                <img
+                  src={logoImg}
+                  alt="Sri Senthil Spares & Services Logo"
+                  className="h-14 w-auto object-contain"
+                />
+              </div>
             </div>
             <h2 className="text-4xl font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-zinc-400">Please enter your details to access your workstation.</p>
+            <p className="text-zinc-400">
+              Please enter your details to access your workstation.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -99,7 +130,9 @@ export default function LoginPage() {
                 required
                 placeholder="admin@srisenthil.com"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 icon={<Mail className="h-4 w-4" />}
                 className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-primary"
               />
@@ -111,21 +144,26 @@ export default function LoginPage() {
                   required
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   icon={<Lock className="h-4 w-4" />}
                   className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-primary"
                 />
                 <div className="flex justify-end">
-                  <button type="button" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
                     Forgot Password?
                   </button>
                 </div>
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              variant="primary" 
+            <Button
+              type="submit"
+              variant="primary"
               className="w-full h-12 text-lg font-bold shadow-xl shadow-primary/20 group"
               disabled={loading}
             >
