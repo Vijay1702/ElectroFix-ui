@@ -9,6 +9,13 @@ export const productService = {
     return response.data;
   },
 
+  getProductsLookup: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.PRODUCTS.GET_ALL, {
+      params: { all: true }
+    });
+    return response.data;
+  },
+
   getLowStock: async () => {
     const response = await axiosInstance.get(API_ENDPOINTS.PRODUCTS.LOW_STOCK);
     return response.data.data;

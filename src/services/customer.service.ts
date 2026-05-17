@@ -9,6 +9,13 @@ export const customerService = {
     return response.data; // expecting { data: [...], total, page, limit } based on backend
   },
 
+  getCustomersLookup: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.CUSTOMERS.GET_ALL, {
+      params: { all: true }
+    });
+    return response.data;
+  },
+
   getCustomerById: async (id: string) => {
     const response = await axiosInstance.get(`${API_ENDPOINTS.CUSTOMERS.GET_BY_ID}/${id}`);
     return response.data.data;

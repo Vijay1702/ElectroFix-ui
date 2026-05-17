@@ -5,9 +5,6 @@ import {
   Wrench, 
   Box, 
   FileText, 
-  CreditCard, 
-  BarChart3, 
-  Settings,
   UserPlus,
   LogOut
 } from "lucide-react";
@@ -21,7 +18,6 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
-  const isAdmin = userRole === "ADMIN";
 
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["ADMIN", "TECHNICIAN"] },
@@ -30,9 +26,6 @@ const Sidebar = () => {
     { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Products", icon: Box, path: "/products", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN"] },
-    { label: "Payments", icon: CreditCard, path: "/payments", roles: ["ADMIN"] },
-    { label: "Reports", icon: BarChart3, path: "/reports", roles: ["ADMIN"] },
-    { label: "Settings", icon: Settings, path: "/settings", roles: ["ADMIN"] },
   ];
 
   const filteredItems = menuItems.filter(item => 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
-import { Plus, Search, Calendar, Eye, Smartphone, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
+import { Plus, Search, Calendar, Smartphone, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -47,7 +47,6 @@ export default function RepairsPage() {
     brand: "",
     model: "",
     problemDescription: "",
-    problemDescription: "",
     status: "not_started"
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,7 +59,7 @@ export default function RepairsPage() {
   useEffect(() => {
     // Only admins need to fetch the full lists for dropdowns
     if (isAdmin) {
-      customerService.getCustomers(1, 100)
+      customerService.getCustomersLookup()
         .then(res => {
           const data = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
           setCustomersList(data);
@@ -70,7 +69,7 @@ export default function RepairsPage() {
           setCustomersList([]);
         });
 
-      userService.getUsers(1, 100, "", "TECHNICIAN")
+      userService.getUsersLookup("TECHNICIAN")
         .then(res => {
           const data = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
           setTechniciansList(data);

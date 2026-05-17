@@ -283,10 +283,7 @@ DO NOT hardcode labels.
     "customers": "Customers",
     "repairJobs": "Repair Jobs",
     "products": "Products",
-    "billing": "Billing",
-    "payments": "Payments",
-    "reports": "Reports",
-    "settings": "Settings"
+    "invoice": "Invoice"
   },
 
   "dashboard": {

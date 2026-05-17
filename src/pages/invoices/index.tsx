@@ -7,7 +7,7 @@ import {
   Plus, Search, Eye, Download, 
   Smartphone, Globe, 
   Receipt, X, Zap, 
-  ArrowRight, Calendar, Fingerprint
+  Calendar, Fingerprint
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import qrScanner from "@/assets/QR_Scanner.png";
 
 export default function InvoicesPage() {
-  const { user } = useAuth();
+  useAuth();
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ export default function InvoicesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter] = useState("");
 
   // Drawer & Form States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -84,9 +84,9 @@ export default function InvoicesPage() {
   const loadInitialData = async () => {
     try {
       const [custRes, prodRes, repRes] = await Promise.all([
-        customerService.getCustomers(1, 100),
-        productService.getProducts(1, 100),
-        repairService.getRepairs(1, 100, "", "COMPLETED")
+        customerService.getCustomersLookup(),
+        productService.getProductsLookup(),
+        repairService.getRepairsLookup("COMPLETED")
       ]);
       setCustomers(custRes.data || []);
       setProducts(prodRes.data || []);

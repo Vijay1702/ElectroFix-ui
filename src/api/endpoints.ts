@@ -15,15 +15,14 @@ export const API_ENDPOINTS = {
     HISTORY: "/customers/:id/history",
   },
 
-  AUTH: {
-    LOGIN: "/auth/login",
-    LOGOUT: "/auth/logout",
-    PROFILE: "/auth/profile",
-    REFRESH: "/auth/refresh-token",
-  },
   USERS: {
     GET_ALL: "/users",
+    GET_BY_ID: "/users",
+    CREATE: "/users",
+    UPDATE: "/users",
+    DELETE: "/users",
   },
+
 
   REPAIRS: {
     GET_ALL: "/repair-jobs",

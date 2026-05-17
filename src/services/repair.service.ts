@@ -9,6 +9,13 @@ export const repairService = {
     return response.data;
   },
 
+  getRepairsLookup: async (status = "") => {
+    const response = await axiosInstance.get(API_ENDPOINTS.REPAIRS.GET_ALL, {
+      params: { all: true, status }
+    });
+    return response.data;
+  },
+
   getRepairById: async (id: string) => {
     const response = await axiosInstance.get(`${API_ENDPOINTS.REPAIRS.GET_BY_ID}/${id}`);
     return response.data.data;

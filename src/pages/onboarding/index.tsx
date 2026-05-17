@@ -19,6 +19,7 @@ export default function OnboardingPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -36,7 +37,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       const res = await userService.getUsers(1, 100);
-      setUsers(res.data || []);
+      setUsers((res.data || []).filter((u: any) => u.isActive !== false));
     } catch (error) {
       console.error("Failed to fetch users", error);
     } finally {
@@ -51,8 +52,15 @@ export default function OnboardingPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
     
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Contact phone is required";
-    if (!formData.password.trim()) newErrors.password = "Access password is required";
-    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    
+    if (!editingUserId) {
+      if (!formData.password.trim()) newErrors.password = "Access password is required";
+      else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    } else {
+      if (formData.password.trim() && formData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters";
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -66,25 +74,104 @@ export default function OnboardingPage() {
 
     setIsSubmitting(true);
     try {
-      await userService.createUser(formData);
-      toast.success("Employee successfully integrated into the system");
+      if (editingUserId) {
+        const payload: any = {
+          fullName: formData.fullName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          role: formData.role
+        };
+        if (formData.password.trim()) {
+          payload.password = formData.password;
+        }
+        await userService.updateUser(editingUserId, payload);
+        toast.success("Personnel profile updated successfully");
+      } else {
+        await userService.createUser(formData);
+        toast.success("Employee successfully integrated into the system");
+      }
       setIsDrawerOpen(false);
       fetchUsers();
       setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN" });
+      setEditingUserId(null);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Integration failure. Please check network connectivity.");
+      toast.error(error.response?.data?.message || "Operation failure. Please check network connectivity.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEditClick = (u: any) => {
+    setErrors({});
+    setEditingUserId(u.id);
+    setFormData({
+      fullName: u.fullName,
+      email: u.email,
+      phoneNumber: u.phoneNumber,
+      password: "",
+      role: u.role?.name || u.role || "TECHNICIAN"
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+
+  const handleDeleteClick = (u: any) => {
+    setUserToDelete(u);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await userService.deleteUser(userToDelete.id);
+      toast.success("Personnel profile successfully removed");
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to remove personnel profile");
+    } finally {
+      setUserToDelete(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+      {userToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="bg-card border border-border shadow-2xl rounded-3xl p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight text-foreground">Confirm Deletion</h3>
+                <p className="text-xs font-bold text-muted-foreground mt-1">This action requires authorization.</p>
+              </div>
+            </div>
+            <p className="text-sm text-foreground/80 mb-8 leading-relaxed">
+              Are you sure you want to permanently delete the personnel profile for <span className="font-black text-foreground">{userToDelete.fullName}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <Button variant="outline" onClick={() => setUserToDelete(null)} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest">
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={confirmDelete} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-destructive/20">
+                Delete Profile
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PageHeader 
         title="Workforce Management" 
         description="Strategically expand your technical team and manage administrative system access."
         action={
-          <Button variant="primary" onClick={() => { setErrors({}); setIsDrawerOpen(true); }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6">
+          <Button variant="primary" onClick={() => { 
+            setErrors({}); 
+            setEditingUserId(null);
+            setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN" });
+            setIsDrawerOpen(true); 
+          }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6">
             <UserPlus className="h-5 w-5" /> Onboard Personnel
           </Button>
         }
@@ -145,7 +232,7 @@ export default function OnboardingPage() {
                   <TableCell className="py-5">
                     <div className={cn(
                       "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.15em]",
-                      u.role?.name === 'ADMIN' 
+                      (u.role?.name || u.role) === 'ADMIN' 
                         ? "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400" 
                         : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
                     )}>
@@ -161,10 +248,10 @@ export default function OnboardingPage() {
                   </TableCell>
                   <TableCell className="text-right px-6 py-5">
                     <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all">
+                      <Button onClick={() => handleEditClick(u)} variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl transition-all">
+                      <Button onClick={() => handleDeleteClick(u)} variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl transition-all">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -179,13 +266,13 @@ export default function OnboardingPage() {
       <Drawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        title="Personnel Onboarding Terminal"
+        title={editingUserId ? "Edit Personnel Profile" : "Personnel Onboarding Terminal"}
         size="md"
         footer={
           <div className="flex gap-4 justify-end w-full">
             <Button variant="outline" onClick={() => setIsDrawerOpen(false)} className="rounded-xl font-black uppercase tracking-widest text-[10px] px-6 h-12">Cancel</Button>
             <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting} className="rounded-xl font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-primary/20">
-              {isSubmitting ? "Processing Integration..." : "Finalize Onboarding"}
+              {isSubmitting ? "Processing Integration..." : (editingUserId ? "Save Changes" : "Finalize Onboarding")}
             </Button>
           </div>
         }
@@ -201,8 +288,12 @@ export default function OnboardingPage() {
                </div>
                <div>
                  <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-1">Authorization Protocol</p>
-                 <p className="text-lg font-black text-foreground tracking-tight">Define Personnel Credentials</p>
-                 <p className="text-xs font-bold text-muted-foreground mt-1">Establishing system access for new technical staff.</p>
+                 <p className="text-lg font-black text-foreground tracking-tight">
+                   {editingUserId ? "Edit Credentials" : "Define Personnel Credentials"}
+                 </p>
+                 <p className="text-xs font-bold text-muted-foreground mt-1">
+                   {editingUserId ? "Modify access settings for active staff." : "Establishing system access for new technical staff."}
+                 </p>
                </div>
              </div>
           </div>
@@ -256,10 +347,10 @@ export default function OnboardingPage() {
               </div>
 
               <Input 
-                label="Terminal Access Password" 
-                required
+                label={editingUserId ? "Terminal Access Password (Leave blank to keep unchanged)" : "Terminal Access Password"} 
+                required={!editingUserId}
                 type="password"
-                placeholder="••••••••"
+                placeholder={editingUserId ? "•••••••• (unchanged)" : "••••••••"}
                 value={formData.password}
                 onChange={(e) => {
                   setFormData({...formData, password: e.target.value});
@@ -301,7 +392,7 @@ export default function OnboardingPage() {
             <div className="bg-amber-500/[0.03] border border-amber-500/10 rounded-2xl p-4 flex gap-4">
                <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
                <p className="text-[11px] font-bold text-amber-600/80 leading-relaxed">
-                 All fields are mandatory. Credentials established here will grant immediate access to the production environment.
+                 {editingUserId ? "Password is optional when modifying existing users. Other fields remain mandatory." : "All fields are mandatory. Credentials established here will grant immediate access to the production environment."}
                </p>
             </div>
           </div>
