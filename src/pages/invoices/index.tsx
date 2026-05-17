@@ -14,7 +14,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { Pagination } from "@/components/shared/Pagination";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
+import { DataTable,type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { Modal } from "@/components/shared/Modal";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
@@ -88,7 +88,7 @@ export default function InvoicesPage() {
       const [custRes, prodRes, repRes] = await Promise.all([
         customerService.getCustomersLookup(),
         productService.getProductsLookup(),
-        repairService.getRepairsLookup("COMPLETED")
+        repairService.getRepairsLookup("pending_to_deliver")
       ]);
       setCustomers(custRes.data || []);
       setProducts(prodRes.data || []);
@@ -310,6 +310,69 @@ export default function InvoicesPage() {
     }
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: "Invoice ID",
+      accessor: "invoiceNumber",
+      cellClassName: "font-black text-primary text-xs tracking-tight",
+    },
+    {
+      header: "Client Profile",
+      accessor: "customer",
+      render: (inv) => (
+        <>
+          <div className="font-black text-foreground text-sm leading-none mb-1">{inv.customer?.fullName}</div>
+          <div className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase opacity-70">{inv.customer?.customerCode}</div>
+        </>
+      ),
+    },
+    {
+      header: "Date Issued",
+      accessor: "invoiceDate",
+      render: (inv) => new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      cellClassName: "text-xs font-bold text-muted-foreground tabular-nums",
+    },
+    {
+      header: "Status",
+      accessor: "paymentStatus",
+      render: (inv) => <StatusBadge status={inv.paymentStatus} />,
+    },
+    {
+      header: "Valuation",
+      accessor: "grandTotal",
+      render: (inv) => `₹${Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      headerClassName: "text-right",
+      cellClassName: "text-right font-black text-foreground tabular-nums text-sm",
+    },
+    {
+      header: "Controls",
+      accessor: "id",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (inv) => (
+        <div className="flex items-center justify-end gap-2">
+          <button 
+            onClick={() => handleViewInvoice(inv.id)}
+            className="h-9 w-9 flex items-center justify-center bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/5 active:scale-90"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={() => handleDownloadInvoice(inv)}
+            disabled={isDownloading === inv.id}
+            className="h-9 w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/5 active:scale-90 disabled:opacity-50"
+          >
+            {isDownloading === inv.id ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-700 bg-background/50">
       <PageHeader 
@@ -322,101 +385,35 @@ export default function InvoicesPage() {
         }
       />
 
-      <div className="card-container p-0 overflow-hidden flex flex-col min-h-[500px] border border-border/50 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-border/50 flex flex-wrap gap-4 items-center justify-between bg-muted/20">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-72 relative group">
-              <Input
-                type="text"
-                placeholder="Search registry..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
-                className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
-              />
-            </div>
+      <DataTable
+        data={invoices}
+        columns={columns}
+        loading={loading}
+        loadingMessage="Loading financial records..."
+        emptyMessage="No financial records detected."
+        emptyIcon={<Receipt className="h-12 w-12" />}
+        toolbar={
+          <div className="w-72 relative group">
+            <Input
+              type="text"
+              placeholder="Search registry..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
+              className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
+            />
           </div>
-        </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent border-border/50">
-              <TableHead className="px-6 py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Invoice ID</TableHead>
-              <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Client Profile</TableHead>
-              <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Date Issued</TableHead>
-              <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Status</TableHead>
-              <TableHead className="text-right py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Valuation</TableHead>
-              <TableHead className="text-right px-6 py-4 font-black uppercase text-[9px] tracking-[0.2em] text-muted-foreground">Controls</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-20 text-center">
-                  <div className="h-8 w-8 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent shadow-lg shadow-primary/10"></div>
-                </TableCell>
-              </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-20 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center gap-3 opacity-50">
-                    <Receipt className="h-12 w-12" />
-                    <p className="text-sm font-bold">No financial records detected.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((inv) => (
-                <TableRow key={inv.id} className="group hover:bg-primary/[0.02] transition-all cursor-default border-border/30">
-                  <TableCell className="px-6 py-5 font-black text-primary text-xs tracking-tight">{inv.invoiceNumber}</TableCell>
-                  <TableCell className="py-5">
-                    <div className="font-black text-foreground text-sm leading-none mb-1">{inv.customer?.fullName}</div>
-                    <div className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase opacity-70">{inv.customer?.customerCode}</div>
-                  </TableCell>
-                  <TableCell className="py-5 text-xs font-bold text-muted-foreground tabular-nums">
-                    {new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </TableCell>
-                  <TableCell className="py-5">
-                    <StatusBadge status={inv.paymentStatus} />
-                  </TableCell>
-                  <TableCell className="text-right py-5 font-black text-foreground tabular-nums text-sm">
-                    ₹{Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell className="text-right px-6 py-5">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => handleViewInvoice(inv.id)}
-                        className="h-9 w-9 flex items-center justify-center bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/5 active:scale-90"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDownloadInvoice(inv)}
-                        disabled={isDownloading === inv.id}
-                        className="h-9 w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/5 active:scale-90 disabled:opacity-50"
-                      >
-                        {isDownloading === inv.id ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <Pagination 
-          page={page} 
-        totalPages={Math.ceil(total / limit)} 
-          limit={limit} 
-          onPageChange={setPage} 
-          onLimitChange={(l) => { setLimit(l); setPage(1); }} 
-        />
-      </div>
+        }
+        pagination={
+          <Pagination 
+            page={page} 
+            totalPages={Math.ceil(total / limit)} 
+            limit={limit} 
+            onPageChange={setPage} 
+            onLimitChange={(l) => { setLimit(l); setPage(1); }} 
+          />
+        }
+      />
 
       {/* Invoice Creation Drawer */}
       <Drawer

@@ -9,7 +9,7 @@ import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
 import { Pagination } from "@/components/shared/Pagination";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
+import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -47,7 +47,9 @@ export default function RepairsPage() {
     brand: "",
     model: "",
     problemDescription: "",
-    status: "not_started"
+    status: "not_started",
+    estimatedCost: "",
+    advanceAmount: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -107,7 +109,9 @@ export default function RepairsPage() {
         brand: repair.brand || "",
         model: repair.model || "",
         problemDescription: repair.problemDescription || "",
-        status: repair.status || "not_started"
+        status: repair.status || "not_started",
+        estimatedCost: repair.estimatedCost ? String(repair.estimatedCost) : "",
+        advanceAmount: repair.advanceAmount ? String(repair.advanceAmount) : ""
       });
     } else {
       setSelectedRepair(null);
@@ -119,7 +123,9 @@ export default function RepairsPage() {
         brand: "",
         model: "",
         problemDescription: "",
-        status: "not_started"
+        status: "not_started",
+        estimatedCost: "",
+        advanceAmount: ""
       });
     }
     setIsDrawerOpen(true);
@@ -143,10 +149,15 @@ export default function RepairsPage() {
     setErrors({});
     setSubmitting(true);
     try {
+      const payload = {
+        ...formData,
+        estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : null,
+        advanceAmount: formData.advanceAmount ? Number(formData.advanceAmount) : null
+      };
       if (selectedRepair) {
-        await repairService.updateRepair(selectedRepair.id, formData);
+        await repairService.updateRepair(selectedRepair.id, payload);
       } else {
-        await repairService.createRepair(formData);
+        await repairService.createRepair(payload);
       }
       setIsDrawerOpen(false);
       fetchRepairs();
@@ -165,6 +176,101 @@ export default function RepairsPage() {
     }
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: "Job No.",
+      accessor: "jobNumber",
+      render: (job) => (
+        <div 
+          className="flex items-center gap-2 cursor-pointer group"
+          onClick={() => handleOpenDrawer(job, true)}
+        >
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <span className="font-bold text-primary">{job.jobNumber}</span>
+        </div>
+      )
+    },
+    {
+      header: "Device & Issue",
+      accessor: "deviceType",
+      render: (job) => (
+        <>
+          <div className="font-bold text-foreground text-sm">{job.deviceType} {job.brand}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold truncate max-w-[150px]">{job.problemDescription}</div>
+        </>
+      )
+    },
+    {
+      header: "Customer",
+      accessor: "customer",
+      render: (job) => (
+        <>
+          <div className="font-semibold text-sm">{job.customer?.fullName || 'Walk-in'}</div>
+          <div className="text-[10px] text-muted-foreground font-medium">{job.customer?.phoneNumber || '-'}</div>
+        </>
+      )
+    },
+    {
+      header: "Estimated Cost",
+      accessor: "estimatedCost",
+      render: (job) => (
+        <span className="text-xs font-black text-foreground">
+          {job.estimatedCost ? `₹${Number(job.estimatedCost).toLocaleString('en-IN')}` : "-"}
+        </span>
+      )
+    },
+    {
+      header: "Status",
+      accessor: "status",
+      render: (job) => <StatusBadge status={job.status} />
+    },
+    {
+      header: "Received",
+      accessor: "receivedDate",
+      render: (job) => (
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>{new Date(job.receivedDate).toLocaleDateString()}</span>
+        </div>
+      )
+    },
+    {
+      header: "Actions",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (job) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenDrawer(job, false);
+            }}
+          >
+            <FileEdit className="h-4 w-4" />
+          </Button>
+          {isAdmin && job.status !== "delivered" && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteConfirmId(job.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader
@@ -179,142 +285,56 @@ export default function RepairsPage() {
         }
       />
 
-      <div className="card-container p-0 overflow-hidden flex flex-col min-h-[500px]">
-        {/* Toolbar */}
-        <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-72">
-              <Input
-                type="text"
-                placeholder="Search job number or device..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4" />}
-              />
-            </div>
-            <div className="w-48">
-              <select
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value="">All Statuses</option>
-                <option value="not_started">Not Started</option>
-                <option value="work_in_progress">Work in Progress</option>
-                <option value="pending_to_deliver">Pending to Deliver</option>
-                <option value="delivered">Delivered</option>
-              </select>
+      <DataTable
+        data={repairs}
+        columns={columns}
+        loading={loading}
+        loadingMessage="Loading repair jobs..."
+        emptyMessage="No repair jobs found."
+        toolbar={
+          <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-72">
+                <Input
+                  type="text"
+                  placeholder="Search job number or device..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  icon={<Search className="h-4 w-4" />}
+                />
+              </div>
+              <div className="w-48">
+                <select
+                  className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.25rem'
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="not_started">Not Started</option>
+                  <option value="work_in_progress">Work in Progress</option>
+                  <option value="pending_to_deliver">Pending to Deliver</option>
+                  <option value="delivered">Delivered</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Job No.</TableHead>
-              <TableHead>Device & Issue</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Received</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                </TableCell>
-              </TableRow>
-            ) : repairs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  No repair jobs found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              repairs.map((job) => (
-                <TableRow 
-                  key={job.id}
-                  className="group hover:bg-primary/5 transition-colors cursor-default"
-                >
-                  <TableCell
-                    className="font-bold text-primary cursor-pointer"
-                    onClick={() => handleOpenDrawer(job, true)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        <Smartphone className="h-4 w-4" />
-                      </div>
-                      <span>{job.jobNumber}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-bold text-foreground text-sm">{job.deviceType} {job.brand}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold truncate max-w-[150px]">{job.problemDescription}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-semibold text-sm">{job.customer?.fullName || 'Walk-in'}</div>
-                    <div className="text-[10px] text-muted-foreground font-medium">{job.customer?.phoneNumber || '-'}</div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={job.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{new Date(job.receivedDate).toLocaleDateString()}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDrawer(job, false);
-                        }}
-                      >
-                        <FileEdit className="h-4 w-4" />
-                      </Button>
-                      {isAdmin && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmId(job.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <Pagination
-          page={page}
-          totalPages={Math.ceil(total / limit)}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={(l) => { setLimit(l); setPage(1); }}
-        />
-      </div>
+        }
+        pagination={
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(total / limit) || 1}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        }
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmDialog
@@ -481,6 +501,16 @@ export default function RepairsPage() {
                       <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Model Name/Number</p>
                       <p className="text-base font-bold">{formData.model || 'N/A'}</p>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Estimated Cost</p>
+                        <p className="text-base font-bold">{formData.estimatedCost ? `₹${Number(formData.estimatedCost).toLocaleString('en-IN')}` : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Advance Collected</p>
+                        <p className="text-base font-bold">{formData.advanceAmount ? `₹${Number(formData.advanceAmount).toLocaleString('en-IN')}` : 'N/A'}</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="grid gap-4">
@@ -512,6 +542,24 @@ export default function RepairsPage() {
                       onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                       disabled={!isAdmin}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="Estimated Cost (₹)"
+                        type="number"
+                        placeholder="e.g. 2500"
+                        value={formData.estimatedCost}
+                        onChange={(e) => setFormData({ ...formData, estimatedCost: e.target.value })}
+                        disabled={!isAdmin}
+                      />
+                      <Input
+                        label="Advance Paid (₹)"
+                        type="number"
+                        placeholder="e.g. 500"
+                        value={formData.advanceAmount}
+                        onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
+                        disabled={!isAdmin}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

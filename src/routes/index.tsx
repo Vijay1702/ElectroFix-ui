@@ -6,6 +6,7 @@ import ProductsPage from "@/pages/products";
 import InvoicesPage from "@/pages/invoices";
 import PaymentsPage from "@/pages/payments";
 import OnboardingPage from "@/pages/onboarding";
+import AttendancePage from "@/pages/attendance";
 import LoginPage from "@/pages/auth/LoginPage";
 import AppLayout from "@/components/layout/AppLayout";
 import { authService } from "@/services/auth.service";
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: "/onboarding",
         element: <OnboardingPage />,
+      },
+      {
+        path: "/attendance",
+        element: <AttendancePage />,
       },
       {
         path: "/customers",

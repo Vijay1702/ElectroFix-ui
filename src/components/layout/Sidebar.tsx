@@ -6,7 +6,8 @@ import {
   Box, 
   FileText, 
   UserPlus,
-  LogOut
+  LogOut,
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ const Sidebar = () => {
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Onboarding", icon: UserPlus, path: "/onboarding", roles: ["ADMIN"] },
+    { label: "Attendance", icon: Calendar, path: "/attendance", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Customers", icon: Users, path: "/customers", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Products", icon: Box, path: "/products", roles: ["ADMIN", "TECHNICIAN"] },

@@ -6,7 +6,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
 import { Pagination } from "@/components/shared/Pagination";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
+import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
@@ -133,6 +133,71 @@ export default function CustomersPage() {
     }
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: "Code",
+      accessor: "customerCode",
+      render: (customer) => (
+        <div 
+          className="flex items-center gap-2 cursor-pointer group"
+          onClick={() => handleOpenView(customer)}
+        >
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <User className="h-4 w-4" />
+          </div>
+          <span className="font-black text-primary">{customer.customerCode}</span>
+        </div>
+      )
+    },
+    {
+      header: "Full Name",
+      accessor: "fullName",
+      cellClassName: "font-bold text-foreground text-sm"
+    },
+    {
+      header: "Phone Number",
+      accessor: "phoneNumber",
+      cellClassName: "font-semibold text-sm",
+      render: (customer) => (
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Phone className="h-3.5 w-3.5" />
+          <span>{customer.phoneNumber}</span>
+        </div>
+      )
+    },
+    {
+      header: "Address",
+      accessor: "address",
+      cellClassName: "text-muted-foreground font-medium text-xs truncate max-w-xs",
+      render: (customer) => customer.address || '-'
+    },
+    {
+      header: "Actions",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (customer) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+            onClick={(e) => { e.stopPropagation(); handleOpenForm(customer); }}
+          >
+            <FileEdit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+            onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader 
@@ -145,106 +210,38 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="card-container p-0 overflow-hidden flex flex-col min-h-[500px]">
-        {/* Toolbar */}
-        <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/10">
-          <div className="w-72">
-            <Input 
-              type="text" 
-              placeholder="Search by name, phone, address..." 
-              value={search} 
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
-              icon={<Search className="h-4 w-4" />}
-            />
+      <DataTable
+        data={customers}
+        columns={columns}
+        loading={loading}
+        loadingMessage="Loading customers..."
+        emptyMessage="No customers found."
+        toolbar={
+          <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/10">
+            <div className="w-72">
+              <Input 
+                type="text" 
+                placeholder="Search by name, phone, address..." 
+                value={search} 
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
+                icon={<Search className="h-4 w-4" />}
+              />
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              Total {total} customers
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            Total {total} customers
-          </div>
-        </div>
-
-        {/* Table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Phone Number</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                </TableCell>
-              </TableRow>
-            ) : customers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  No customers found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              customers.map((customer) => (
-                <TableRow 
-                  key={customer.id}
-                  className="group hover:bg-primary/5 transition-colors cursor-default"
-                >
-                  <TableCell 
-                    className="font-black text-primary cursor-pointer"
-                    onClick={() => handleOpenView(customer)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        <User className="h-4 w-4" />
-                      </div>
-                      <span>{customer.customerCode}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-bold text-foreground text-sm">{customer.fullName}</TableCell>
-                  <TableCell className="font-semibold text-sm">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Phone className="h-3.5 w-3.5" />
-                      <span>{customer.phoneNumber}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-medium text-xs truncate max-w-xs">{customer.address || '-'}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
-                        onClick={() => handleOpenForm(customer)}
-                      >
-                        <FileEdit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
-                        onClick={() => { setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <Pagination 
-          page={page} 
-          totalPages={Math.ceil(total / limit)} 
-          limit={limit}
-          onPageChange={setPage} 
-          onLimitChange={(l) => { setLimit(l); setPage(1); }}
-        />
-      </div>
+        }
+        pagination={
+          <Pagination 
+            page={page} 
+            totalPages={Math.ceil(total / limit) || 1} 
+            limit={limit}
+            onPageChange={setPage} 
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        }
+      />
 
       {/* Form Drawer (Create/Edit Sidebar) */}
       <Drawer

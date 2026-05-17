@@ -3,12 +3,13 @@ import { userService } from "@/services/user.service";
 import { 
   UserPlus, Mail, Phone, 
   Shield, Trash2, Edit, User, Lock, 
-  AlertCircle, Users 
+  AlertCircle, Users, Search
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
+import { DataTable, type Column } from "@/components/shared/DataTable";
+import { Pagination } from "@/components/shared/Pagination";
 import { Drawer } from "@/components/shared/Drawer";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,10 @@ import { cn } from "@/lib/utils";
 export default function OnboardingPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,18 +31,20 @@ export default function OnboardingPage() {
     email: "",
     phoneNumber: "",
     password: "",
-    role: "TECHNICIAN"
+    role: "TECHNICIAN",
+    perDaySalary: "0"
   });
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page, limit, search]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await userService.getUsers(1, 100);
+      const res = await userService.getUsers(page, limit, search);
       setUsers((res.data || []).filter((u: any) => u.isActive !== false));
+      setTotal(res.total || 0);
     } catch (error) {
       console.error("Failed to fetch users", error);
     } finally {
@@ -50,7 +57,7 @@ export default function OnboardingPage() {
     if (!formData.fullName.trim()) newErrors.fullName = "Full legal name is required";
     else if (formData.fullName.trim().length < 3) newErrors.fullName = "Full legal name must be at least 3 characters";
 
-    if (!formData.email.trim()) newErrors.email = "Work email is required";
+    if (!formData.email.trim()) newErrors.email = "Digital ID (Email) is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
     
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Contact phone is required";
@@ -62,6 +69,13 @@ export default function OnboardingPage() {
     } else {
       if (formData.password.trim() && formData.password.length < 6) {
         newErrors.password = "Password must be at least 6 characters";
+      }
+    }
+
+    if (formData.perDaySalary !== "") {
+      const salary = Number(formData.perDaySalary);
+      if (isNaN(salary) || salary < 0) {
+        newErrors.perDaySalary = "Per day salary must be a non-negative number";
       }
     }
     
@@ -87,25 +101,28 @@ export default function OnboardingPage() {
 
     setIsSubmitting(true);
     try {
+      const payload: any = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+        perDaySalary: Number(formData.perDaySalary) || 0
+      };
+
       if (editingUserId) {
-        const payload: any = {
-          fullName: formData.fullName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          role: formData.role
-        };
         if (formData.password.trim()) {
           payload.password = formData.password;
         }
         await userService.updateUser(editingUserId, payload);
         toast.success("Personnel profile updated successfully");
       } else {
-        await userService.createUser(formData);
+        payload.password = formData.password;
+        await userService.createUser(payload);
         toast.success("Employee successfully integrated into the system");
       }
       setIsDrawerOpen(false);
       fetchUsers();
-      setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN" });
+      setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN", perDaySalary: "0" });
       setEditingUserId(null);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Operation failure. Please check network connectivity.");
@@ -122,7 +139,8 @@ export default function OnboardingPage() {
       email: u.email,
       phoneNumber: u.phoneNumber,
       password: "",
-      role: u.role?.name || u.role || "TECHNICIAN"
+      role: u.role?.name || u.role || "TECHNICIAN",
+      perDaySalary: String(u.perDaySalary || 0)
     });
     setIsDrawerOpen(true);
   };
@@ -137,14 +155,113 @@ export default function OnboardingPage() {
     if (!userToDelete) return;
     try {
       await userService.deleteUser(userToDelete.id);
-      toast.success("Personnel profile successfully removed");
+      toast.success("Personnel profile successfully deactivated");
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to remove personnel profile");
+      toast.error(error.response?.data?.message || "Failed to deactivate personnel profile");
     } finally {
       setUserToDelete(null);
     }
   };
+
+  const columns: Column<any>[] = [
+    {
+      header: "Personnel Profile",
+      headerClassName: "px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground",
+      cellClassName: "px-6 py-5",
+      render: (u) => (
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:scale-110 transition-transform">
+            {u.fullName.charAt(0)}
+          </div>
+          <div>
+            <span className="font-black text-foreground text-sm tracking-tight">{u.fullName}</span>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Employee ID: {u.id.slice(0, 8)}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: "Digital Coordinates",
+      render: (u) => (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-xs text-foreground font-bold">
+            <Mail className="h-3.5 w-3.5 text-primary/60" /> {u.email}
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-black tracking-wider uppercase">
+            <Phone className="h-3.5 w-3.5 text-primary/60" /> {u.phoneNumber}
+          </div>
+        </div>
+      )
+    },
+    {
+      header: "Access Clearance",
+      render: (u) => (
+        <div className={cn(
+          "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.15em]",
+          (u.role?.name || u.role) === 'ADMIN' 
+            ? "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400" 
+            : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+        )}>
+          <Shield className="h-3.5 w-3.5" />
+          {u.role?.name || u.role}
+        </div>
+      )
+    },
+    {
+      header: "Operational Status",
+      render: (u) => (
+        <div className="flex items-center gap-2">
+          {u.operationalStatus !== "Inactive" ? (
+            <>
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Active Duty</span>
+            </>
+          ) : (
+            <>
+              <div className="h-2 w-2 rounded-full bg-slate-400 shadow-lg shadow-slate-400/50" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inactive</span>
+            </>
+          )}
+        </div>
+      )
+    },
+    {
+      header: "Daily Salary",
+      render: (u) => (
+        <span className="text-xs font-bold text-foreground">
+          ₹{Number(u.perDaySalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    {
+      header: "Actions",
+      headerClassName: "text-right px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground",
+      cellClassName: "text-right px-6 py-5",
+      render: (u) => (
+        <div className="flex items-center justify-end gap-1.5 ">
+          <Button 
+            onClick={() => handleEditClick(u)} 
+            disabled={u.operationalStatus === "Inactive"} 
+            variant="ghost" 
+            size="icon" 
+            className="h-9 w-9 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all disabled:opacity-30"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => handleDeleteClick(u)} 
+            disabled={u.operationalStatus === "Inactive"} 
+            variant="ghost" 
+            size="icon" 
+            className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl transition-all disabled:opacity-30"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
@@ -156,19 +273,19 @@ export default function OnboardingPage() {
                 <AlertCircle className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-black tracking-tight text-foreground">Confirm Deletion</h3>
+                <h3 className="text-lg font-black tracking-tight text-foreground">Deactivate Personnel</h3>
                 <p className="text-xs font-bold text-muted-foreground mt-1">This action requires authorization.</p>
               </div>
             </div>
             <p className="text-sm text-foreground/80 mb-8 leading-relaxed">
-              Are you sure you want to permanently delete the personnel profile for <span className="font-black text-foreground">{userToDelete.fullName}</span>? This action cannot be undone.
+              Are you sure you want to deactivate the personnel profile for <span className="font-black text-foreground">{userToDelete.fullName}</span>? Their status will be marked as <span className="font-bold text-destructive">Inactive</span> and they will be excluded from active attendance rosters, but records will be preserved for payroll reports.
             </p>
             <div className="flex gap-4 justify-end">
               <Button variant="outline" onClick={() => setUserToDelete(null)} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest">
                 Cancel
               </Button>
               <Button variant="danger" onClick={confirmDelete} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-destructive/20">
-                Delete Profile
+                Deactivate Profile
               </Button>
             </div>
           </div>
@@ -182,7 +299,7 @@ export default function OnboardingPage() {
           <Button variant="primary" onClick={() => { 
             setErrors({}); 
             setEditingUserId(null);
-            setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN" });
+            setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN", perDaySalary: "0" });
             setIsDrawerOpen(true); 
           }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6">
             <UserPlus className="h-5 w-5" /> Onboard Personnel
@@ -190,91 +307,36 @@ export default function OnboardingPage() {
         }
       />
 
-      <div className="card-container p-0 overflow-hidden flex flex-col min-h-[500px] border-border/60 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
-        <Table>
-          <TableHeader className="bg-muted/30">
-            <TableRow>
-              <TableHead className="px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground">Personnel Profile</TableHead>
-              <TableHead className="py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground">Digital Coordinates</TableHead>
-              <TableHead className="py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground">Access Clearance</TableHead>
-              <TableHead className="py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground">Operational Status</TableHead>
-              <TableHead className="text-right px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground">Management</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-20 text-center">
-                  <div className="h-10 w-10 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent shadow-lg shadow-primary/20"></div>
-                  <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Retrieving Workforce Registry...</p>
-                </TableCell>
-              </TableRow>
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-20 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center gap-4 opacity-40">
-                    <Users className="h-12 w-12" />
-                    <p className="text-sm font-bold">No personnel records currently archived.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((u) => (
-                <TableRow key={u.id} className="group hover:bg-primary/[0.03] transition-all cursor-default border-b border-border/40">
-                  <TableCell className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:scale-110 transition-transform">
-                        {u.fullName.charAt(0)}
-                      </div>
-                      <div>
-                        <span className="font-black text-foreground text-sm tracking-tight">{u.fullName}</span>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Employee ID: {u.id.slice(0, 8)}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-5">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs text-foreground font-bold">
-                        <Mail className="h-3.5 w-3.5 text-primary/60" /> {u.email}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-black tracking-wider uppercase">
-                        <Phone className="h-3.5 w-3.5 text-primary/60" /> {u.phoneNumber}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-5">
-                    <div className={cn(
-                      "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.15em]",
-                      (u.role?.name || u.role) === 'ADMIN' 
-                        ? "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400" 
-                        : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
-                    )}>
-                      <Shield className="h-3.5 w-3.5" />
-                      {u.role?.name || u.role}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-5">
-                    <div className="flex items-center gap-2">
-                       <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Active Duty</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right px-6 py-5">
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                      <Button onClick={() => handleEditClick(u)} variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => handleDeleteClick(u)} variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl transition-all">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable 
+        data={users} 
+        columns={columns} 
+        loading={loading} 
+        loadingMessage="Retrieving Workforce Registry..."
+        emptyMessage="No personnel records currently archived."
+        toolbar={
+          <div className="px-6 py-4 border-b border-border/50 flex flex-wrap gap-4 items-center justify-between bg-muted/20">
+            <div className="w-72 relative group">
+              <Input
+                type="text"
+                placeholder="Search personnel..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
+                className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
+              />
+            </div>
+          </div>
+        }
+        pagination={
+          <Pagination 
+            page={page} 
+            totalPages={Math.ceil(total / limit)} 
+            limit={limit} 
+            onPageChange={setPage} 
+            onLimitChange={(l) => { setLimit(l); setPage(1); }} 
+          />
+        }
+      />
 
       <Drawer
         isOpen={isDrawerOpen}
@@ -348,6 +410,7 @@ export default function OnboardingPage() {
                   label="Contact Frequency (Phone)" 
                   required
                   placeholder="+91 98400 12345"
+                  type="number"
                   value={formData.phoneNumber}
                   onChange={(e) => {
                     setFormData({...formData, phoneNumber: e.target.value});
@@ -393,6 +456,22 @@ export default function OnboardingPage() {
                     </p>
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-3">
+                <Input 
+                  label="Daily Salary Rate (₹)" 
+                  type="number"
+                  placeholder="e.g. 750"
+                  value={formData.perDaySalary}
+                  onChange={(e) => {
+                    setFormData({...formData, perDaySalary: e.target.value});
+                    if (errors.perDaySalary) setErrors({...errors, perDaySalary: ""});
+                  }}
+                  error={errors.perDaySalary}
+                  icon={<span className="text-xs font-bold text-muted-foreground">₹</span>}
+                  className="h-12 bg-muted/20 border-border/40 focus:bg-background"
+                />
               </div>
 
               <div className="space-y-3 p-6 rounded-[1.5rem] bg-muted/30 border border-border/40">

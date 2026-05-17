@@ -88,4 +88,10 @@ export const API_ENDPOINTS = {
     MARK_AS_READ: "/notifications/:id/read",
     MARK_ALL_AS_READ: "/notifications/read-all",
   },
+
+  ATTENDANCE: {
+    GET_ALL: "/attendance",
+    BULK: "/attendance/bulk",
+    PAYROLL: "/attendance/payroll",
+  },
 };

@@ -6,7 +6,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
 import { Pagination } from "@/components/shared/Pagination";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/shared/Table";
+import { DataTable,type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -165,6 +165,91 @@ export default function ProductsPage() {
     }
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: "Product Details",
+      accessor: "name",
+      render: (product) => (
+        <div 
+          className="flex items-center gap-2 cursor-pointer group"
+          onClick={() => handleOpenDrawer(product, true)}
+        >
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <Package className="h-4 w-4" />
+          </div>
+          <div>
+            <div className="font-bold text-primary text-sm">{product.name}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Code: {product.productCode}</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: "Category",
+      accessor: "categoryId",
+      render: (product) => (
+        <span className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-md text-[10px] font-black uppercase tracking-[0.2em]">
+          {product.category?.name || 'Spare Parts'}
+        </span>
+      )
+    },
+    {
+      header: "Prices",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (product) => (
+        <>
+          {isAdmin && <div className="text-xs font-semibold text-muted-foreground">Cost: ₹{Number(product.purchasePrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>}
+          <div className="text-sm font-black text-green-600 dark:text-green-400">Sale: ₹{Number(product.sellingPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+        </>
+      )
+    },
+    {
+      header: "Stock Level",
+      headerClassName: "text-center",
+      cellClassName: "text-center",
+      render: (product) => (
+        <div className={`inline-flex flex-col items-center justify-center ${product.stockQuantity <= product.minimumStock ? 'text-red-500' : 'text-foreground'}`}>
+          <span className="text-lg font-black">{product.stockQuantity}</span>
+          {product.stockQuantity <= product.minimumStock && (
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-red-500 animate-pulse">Low</span>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  if (isAdmin) {
+    columns.push({
+      header: "Actions",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (product) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={(e) => { e.stopPropagation(); handleOpenDrawer(product, false); }} 
+            className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+          >
+            <Edit3 className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirmId(product.id);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
       <PageHeader 
@@ -202,141 +287,56 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="card-container p-0 overflow-hidden flex flex-col min-h-[400px]">
-        {/* Toolbar */}
-        <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-72">
-              <Input
-                type="text"
-                placeholder="Search products or parts..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4" />}
-              />
-            </div>
-            <div className="w-48">
-              <select
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                value={categoryFilter}
-                onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value="">All Categories</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+      <DataTable
+        data={products}
+        columns={columns}
+        loading={loading}
+        loadingMessage="Loading products..."
+        emptyIcon={<Package className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />}
+        emptyMessage="No products found in inventory."
+        toolbar={
+          <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-72">
+                <Input
+                  type="text"
+                  placeholder="Search products or parts..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  icon={<Search className="h-4 w-4" />}
+                />
+              </div>
+              <div className="w-48">
+                <select
+                  className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                  value={categoryFilter}
+                  onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.25rem'
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Product Details</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead className="text-right">Prices</TableHead>
-              <TableHead className="text-center">Stock Level</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                </TableCell>
-              </TableRow>
-            ) : products.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  <Package className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                  No products found in inventory.
-                </TableCell>
-              </TableRow>
-            ) : (
-              products.map((product) => (
-                <TableRow 
-                  key={product.id}
-                  className="group hover:bg-primary/5 transition-colors cursor-default"
-                >
-                  <TableCell 
-                    className="cursor-pointer"
-                    onClick={() => handleOpenDrawer(product, true)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        <Package className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-primary text-sm">{product.name}</div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Code: {product.productCode}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-md text-[10px] font-black uppercase tracking-[0.2em]">
-                      {product.category?.name || 'Spare Parts'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {isAdmin && <div className="text-xs font-semibold text-muted-foreground">Cost: ₹{Number(product.purchasePrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>}
-                    <div className="text-sm font-black text-green-600 dark:text-green-400">Sale: ₹{Number(product.sellingPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className={`inline-flex flex-col items-center justify-center ${product.stockQuantity <= product.minimumStock ? 'text-red-500' : 'text-foreground'}`}>
-                      <span className="text-lg font-black">{product.stockQuantity}</span>
-                      {product.stockQuantity <= product.minimumStock && (
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-red-500 animate-pulse">Low</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleOpenDrawer(product, false)} 
-                          className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmId(product.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <Pagination 
-          page={page} 
-          totalPages={Math.ceil(total / limit)} 
-          limit={limit}
-          onPageChange={setPage} 
-          onLimitChange={(l) => { setLimit(l); setPage(1); }}
-        />
-      </div>
+        }
+        pagination={
+          <Pagination 
+            page={page} 
+            totalPages={Math.ceil(total / limit) || 1} 
+            limit={limit}
+            onPageChange={setPage} 
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        }
+      />
 
       {/* Product Drawer */}
       <Drawer
