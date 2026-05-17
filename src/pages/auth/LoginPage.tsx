@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { LogIn, Mail, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import logoImg from "@/assets/logo.jpg";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -39,19 +40,19 @@ export default function LoginPage() {
         
         <div className="relative z-10 w-full h-full flex flex-col justify-center p-20 text-white">
           <div className="flex items-center gap-3 mb-10">
-            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-              <ShieldCheck className="h-7 w-7 text-white" />
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md overflow-hidden border border-white/30 flex items-center justify-center">
+              <img src={logoImg} alt="Sri Senthil Spares & Services Logo" className="h-full w-full object-cover" />
             </div>
-            <span className="text-3xl font-black tracking-tighter uppercase">ElectroFix</span>
+            <span className="text-2xl font-black tracking-tighter uppercase leading-none">Sri Senthil Spares</span>
           </div>
           
-          <h1 className="text-6xl font-bold leading-tight mb-6">
+          <h1 className="text-5xl font-bold leading-tight mb-6">
             The Ultimate <br /> 
-            <span className="text-white/70">Repair Management</span> <br />
+            <span className="text-white/70">Spares & Services</span> <br />
             Powerhouse.
           </h1>
-          <p className="text-xl text-white/60 max-w-lg leading-relaxed">
-            Streamline your repair workflow, manage inventory with surgical precision, and deliver world-class service to your customers.
+          <p className="text-lg text-white/60 max-w-lg leading-relaxed">
+            Surgical precision in managing your motors, fans, mixers, electrical equipment, inventory and services.
           </p>
 
           <div className="mt-20 flex gap-10">
@@ -76,8 +77,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="mb-10 text-center lg:text-left">
             <div className="lg:hidden flex justify-center mb-6">
-               <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                 <ShieldCheck className="h-8 w-8 text-white" />
+               <div className="h-16 w-16 rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center shadow-lg">
+                 <img src={logoImg} alt="Sri Senthil Spares & Services Logo" className="h-full w-full object-cover" />
                </div>
             </div>
             <h2 className="text-4xl font-bold text-white mb-2">Welcome Back</h2>
@@ -96,7 +97,7 @@ export default function LoginPage() {
                 label="Work Email"
                 type="email"
                 required
-                placeholder="admin@electrofix.com"
+                placeholder="admin@srisenthil.com"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 icon={<Mail className="h-4 w-4" />}

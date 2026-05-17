@@ -4,7 +4,7 @@ import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
 import { repairService } from "@/services/repair.service";
 import { 
-  Plus, Search, Eye, Download, 
+  Plus, Search, Eye, Printer, 
   Smartphone, Globe, 
   Receipt, X, Zap, 
   Calendar, Fingerprint
@@ -258,53 +258,53 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDownloadInvoice = async (inv: any) => {
+  const handlePrintInvoice = async (inv: any) => {
     setIsDownloading(inv.id);
     try {
       const response = await invoiceService.generatePDF(inv.id);
-      
-      // We must check if the response is actually a Blob
-      // If it's a JSON error, it might be wrapped in a Blob if responseType was 'blob'
       const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' });
       
       if (blob.size < 1000) {
         const text = await blob.text();
         try {
           const json = JSON.parse(text);
-          toast.error(`Server Error: ${json.message || "Failed to generate PDF"}`);
+          toast.error(`Server Error: ${json.message || "Failed to prepare print document"}`);
           return;
         } catch (e) {
-          // Not JSON, continue with blob
+          // Not JSON, continue with printing
         }
       }
 
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
       
-      // Force filename with .pdf extension
-      const safeInvoiceNum = (inv.invoiceNumber || "Invoice").replace(/[^a-zA-Z0-9]/g, "_");
-      const fileName = `${safeInvoiceNum}.pdf`;
+      // Create hidden iframe to trigger print
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = url;
       
-      link.href = url;
-      link.setAttribute('download', fileName);
-      link.style.display = 'none';
+      document.body.appendChild(iframe);
       
-      document.body.appendChild(link);
+      iframe.onload = () => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        
+        // Clean up
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+          window.URL.revokeObjectURL(url);
+        }, 3000);
+      };
       
-      // Trigger download
-      link.click();
-      
-      // Safe cleanup
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link);
-        }
-        window.URL.revokeObjectURL(url);
-      }, 1000);
-      
-      toast.success("Professional PDF Secured");
+      toast.success("Preparing print layout...");
     } catch (error) {
-      toast.error("Failed to generate PDF. System might be busy.");
+      toast.error("Failed to prepare PDF. System might be busy.");
     } finally {
       setIsDownloading(null);
     }
@@ -358,14 +358,14 @@ export default function InvoicesPage() {
             <Eye className="h-4 w-4" />
           </button>
           <button 
-            onClick={() => handleDownloadInvoice(inv)}
+            onClick={() => handlePrintInvoice(inv)}
             disabled={isDownloading === inv.id}
-            className="h-9 w-9 flex items-center justify-center bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/5 active:scale-90 disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-amber-500/5 active:scale-90 disabled:opacity-50"
           >
             {isDownloading === inv.id ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              <Download className="h-4 w-4" />
+              <Printer className="h-4 w-4" />
             )}
           </button>
         </div>

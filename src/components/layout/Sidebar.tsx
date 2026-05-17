@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { ConfirmDialog } from "../shared/ConfirmDialog";
+import logoImg from "@/assets/logo.jpg";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -41,8 +42,20 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-card border-r flex flex-col h-full">
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-primary">ElectroFix</h1>
+      <div className="p-4 flex flex-col items-center justify-center border-b gap-3 bg-primary/5">
+        <img 
+          src={logoImg} 
+          alt="Sri Senthil Spares & Services Logo" 
+          className="h-16 w-auto object-contain rounded-xl shadow-md border border-primary/10"
+        />
+        <div className="text-center">
+          <h1 className="text-xs font-black text-primary uppercase tracking-widest leading-snug">
+            Sri Senthil
+          </h1>
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5 leading-none">
+            Spares & Services
+          </p>
+        </div>
       </div>
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {filteredItems.map((item) => (
