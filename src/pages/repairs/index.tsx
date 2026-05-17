@@ -149,11 +149,16 @@ export default function RepairsPage() {
     setErrors({});
     setSubmitting(true);
     try {
-      const payload = {
+      const payload: any = {
         ...formData,
-        estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : null,
-        advanceAmount: formData.advanceAmount ? Number(formData.advanceAmount) : null
+        estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : undefined,
+        advanceAmount: formData.advanceAmount ? Number(formData.advanceAmount) : undefined
       };
+      
+      if (!payload.technicianId) delete payload.technicianId;
+      if (!payload.expectedDeliveryDate) delete payload.expectedDeliveryDate;
+      if (!payload.brand) delete payload.brand;
+      if (!payload.model) delete payload.model;
       if (selectedRepair) {
         await repairService.updateRepair(selectedRepair.id, payload);
       } else {
@@ -242,17 +247,19 @@ export default function RepairsPage() {
       cellClassName: "text-right",
       render: (job) => (
         <div className="flex items-center justify-end gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenDrawer(job, false);
-            }}
-          >
-            <FileEdit className="h-4 w-4" />
-          </Button>
+          {job.status !== "delivered" && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDrawer(job, false);
+              }}
+            >
+              <FileEdit className="h-4 w-4" />
+            </Button>
+          )}
           {isAdmin && job.status !== "delivered" && (
             <Button 
               variant="ghost" 
