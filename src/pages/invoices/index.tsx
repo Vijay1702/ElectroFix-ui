@@ -57,6 +57,7 @@ export default function InvoicesPage() {
     paidAmount: 0,
     notes: ""
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchInvoices();
@@ -65,6 +66,7 @@ export default function InvoicesPage() {
   useEffect(() => {
     if (isDrawerOpen) {
       loadInitialData();
+      setErrors({});
     }
   }, [isDrawerOpen]);
 
@@ -187,10 +189,16 @@ export default function InvoicesPage() {
   }, [paymentType, grandTotal]);
 
   const handleFinalize = async () => {
-    if (!formData.customerId || formData.items.length === 0) {
-      toast.error("Please select a customer and add at least one item.");
+    const newErrors: Record<string, string> = {};
+    if (!formData.customerId) newErrors.customerId = "Customer is required";
+    if (formData.items.length === 0) newErrors.items = "At least one item is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+    
+    setErrors({});
 
     if (paymentMethod === "QR") {
       setIsQRModalOpen(true);
@@ -446,6 +454,7 @@ export default function InvoicesPage() {
                   onClick={() => {
                     setInvoiceType(type.id as any);
                     setFormData({ ...formData, items: [], repairJobId: "" });
+                    setErrors({});
                   }}
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2",
@@ -469,7 +478,11 @@ export default function InvoicesPage() {
                 label="Select Customer"
                 options={customers.map(c => ({ value: c.id, label: `${c.fullName} (${c.phoneNumber})` }))}
                 value={formData.customerId}
-                onChange={(val) => setFormData({ ...formData, customerId: val })}
+                onChange={(val) => {
+                  setFormData({ ...formData, customerId: val });
+                  if (errors.customerId) setErrors({ ...errors, customerId: "" });
+                }}
+                error={errors.customerId}
                 required
               />
             </div>
@@ -527,7 +540,10 @@ export default function InvoicesPage() {
           <div className="space-y-6 pt-6 border-t border-dashed">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Billing Line Items</label>
-              <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-md uppercase tracking-widest">{formData.items.length} Items</span>
+              <div className="flex items-center gap-4">
+                {errors.items && <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">{errors.items}</span>}
+                <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-md uppercase tracking-widest">{formData.items.length} Items</span>
+              </div>
             </div>
 
             <div className="border border-border/50 rounded-3xl overflow-hidden shadow-sm">

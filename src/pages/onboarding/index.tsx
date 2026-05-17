@@ -48,10 +48,13 @@ export default function OnboardingPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.fullName.trim()) newErrors.fullName = "Full legal name is required";
+    else if (formData.fullName.trim().length < 3) newErrors.fullName = "Full legal name must be at least 3 characters";
+
     if (!formData.email.trim()) newErrors.email = "Work email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
     
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Contact phone is required";
+    else if (formData.phoneNumber.trim().length !== 10) newErrors.phoneNumber = "Phone number must be exactly 10 characters";
     
     if (!editingUserId) {
       if (!formData.password.trim()) newErrors.password = "Access password is required";
@@ -64,6 +67,16 @@ export default function OnboardingPage() {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return 0;
+    let score = 0;
+    if (pass.length > 5) score += 25;
+    if (pass.length > 8) score += 25;
+    if (/[A-Z]/.test(pass)) score += 25;
+    if (/[0-9!@#$%^&*]/.test(pass)) score += 25;
+    return Math.min(100, score);
   };
 
   const handleSubmit = async () => {
@@ -346,20 +359,41 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              <Input 
-                label={editingUserId ? "Terminal Access Password (Leave blank to keep unchanged)" : "Terminal Access Password"} 
-                required={!editingUserId}
-                type="password"
-                placeholder={editingUserId ? "•••••••• (unchanged)" : "••••••••"}
-                value={formData.password}
-                onChange={(e) => {
-                  setFormData({...formData, password: e.target.value});
-                  if (errors.password) setErrors({...errors, password: ""});
-                }}
-                error={errors.password}
-                icon={<Lock className="h-4 w-4" />}
-                className="h-12 bg-muted/20 border-border/40 focus:bg-background"
-              />
+              <div className="space-y-3">
+                <Input 
+                  label={editingUserId ? "Terminal Access Password (Leave blank to keep unchanged)" : "Terminal Access Password"} 
+                  required={!editingUserId}
+                  type="password"
+                  placeholder={editingUserId ? "•••••••• (unchanged)" : "••••••••"}
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({...formData, password: e.target.value});
+                    if (errors.password) setErrors({...errors, password: ""});
+                  }}
+                  error={errors.password}
+                  icon={<Lock className="h-4 w-4" />}
+                  className="h-12 bg-muted/20 border-border/40 focus:bg-background"
+                />
+                {formData.password && (
+                  <div className="space-y-1 mt-2">
+                    <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-300",
+                          getPasswordStrength(formData.password) <= 25 ? "bg-red-500" : 
+                          getPasswordStrength(formData.password) <= 50 ? "bg-amber-500" : "bg-emerald-500"
+                        )}
+                        style={{ width: `${getPasswordStrength(formData.password)}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-right font-bold uppercase tracking-wider">
+                      {getPasswordStrength(formData.password) <= 25 ? "Weak" : 
+                       getPasswordStrength(formData.password) <= 50 ? "Fair" : 
+                       getPasswordStrength(formData.password) <= 75 ? "Good" : "Strong"}
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-3 p-6 rounded-[1.5rem] bg-muted/30 border border-border/40">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">

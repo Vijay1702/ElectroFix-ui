@@ -82,8 +82,17 @@ export default function CustomersPage() {
     
     // Validation
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required";
-    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Phone Number is required";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full Name is required";
+    } else if (formData.fullName.trim().length < 3) {
+      newErrors.fullName = "Full Name must be at least 3 characters";
+    }
+    
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone Number is required";
+    } else if (formData.phoneNumber.trim().length < 10) {
+      newErrors.phoneNumber = "Phone Number must be at least 10 characters";
+    }
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

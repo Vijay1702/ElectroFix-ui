@@ -105,10 +105,19 @@ export default function ProductsPage() {
     // Validation
     const newErrors: Record<string, string> = {};
     if (!formData.name?.trim()) newErrors.name = "Product Name is required";
-    if (!formData.purchasePrice) newErrors.purchasePrice = "Purchase Price is required";
-    if (!formData.sellingPrice) newErrors.sellingPrice = "Selling Price is required";
-    if (!formData.stockQuantity) newErrors.stockQuantity = "Stock Quantity is required";
     if (!formData.categoryId) newErrors.categoryId = "Category is required";
+    
+    const purchase = Number(formData.purchasePrice);
+    if (formData.purchasePrice === "" || isNaN(purchase) || purchase < 0) newErrors.purchasePrice = "Valid purchase price is required";
+    
+    const selling = Number(formData.sellingPrice);
+    if (formData.sellingPrice === "" || isNaN(selling) || selling < 0) newErrors.sellingPrice = "Valid selling price is required";
+    
+    const stock = Number(formData.stockQuantity);
+    if (formData.stockQuantity === "" || !Number.isInteger(stock) || stock < 0) newErrors.stockQuantity = "Valid stock quantity is required";
+    
+    const minStock = Number(formData.minimumStock);
+    if (formData.minimumStock === "" || !Number.isInteger(minStock) || minStock < 0) newErrors.minimumStock = "Valid minimum stock is required";
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -488,10 +497,15 @@ export default function ProductsPage() {
                 />
                 <Input 
                   label="Min. Stock Alert" 
+                  required
                   type="number" 
                   placeholder="5" 
                   value={formData.minimumStock}
-                  onChange={(e) => setFormData({...formData, minimumStock: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, minimumStock: e.target.value});
+                    if (errors.minimumStock) setErrors({...errors, minimumStock: ""});
+                  }}
+                  error={errors.minimumStock}
                   icon={<AlertTriangle className="h-4 w-4" />} 
                 />
                </div>
