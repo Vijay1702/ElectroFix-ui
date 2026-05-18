@@ -140,6 +140,9 @@ export default function RepairsPage() {
     if (!formData.technicianId) newErrors.technicianId = "Assigned To is required";
     if (!formData.deviceType?.trim()) newErrors.deviceType = "Device Type is required";
     if (!formData.problemDescription?.trim()) newErrors.problemDescription = "Problem Description is required";
+    if (!formData.estimatedCost || isNaN(Number(formData.estimatedCost)) || Number(formData.estimatedCost) < 0) {
+      newErrors.estimatedCost = "Estimated Cost is required and must be positive";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -151,7 +154,7 @@ export default function RepairsPage() {
     try {
       const payload: any = {
         ...formData,
-        estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : undefined,
+        estimatedCost: Number(formData.estimatedCost),
         advanceAmount: formData.advanceAmount ? Number(formData.advanceAmount) : undefined
       };
       
@@ -551,11 +554,16 @@ export default function RepairsPage() {
                     />
                     <div className="grid grid-cols-2 gap-4">
                       <Input
-                        label="Estimated Cost (₹)"
+                        label="Estimated Cost (₹) *"
                         type="number"
                         placeholder="e.g. 2500"
                         value={formData.estimatedCost}
-                        onChange={(e) => setFormData({ ...formData, estimatedCost: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, estimatedCost: e.target.value });
+                          if (errors.estimatedCost) setErrors({ ...errors, estimatedCost: "" });
+                        }}
+                        error={errors.estimatedCost}
+                        required
                         disabled={!isAdmin}
                       />
                       <Input
