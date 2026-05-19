@@ -23,20 +23,23 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<any>(null);
   const [recentRepairs, setRecentRepairs] = useState<any[]>([]);
   const [technicianWorkload, setTechnicianWorkload] = useState<any[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       if (!user) return;
       try {
-        const [sumRes, repRes, techRes] = await Promise.all([
+        const [sumRes, repRes, techRes, lowStockRes] = await Promise.all([
           dashboardService.getSummary(),
           dashboardService.getRecentRepairs(),
-          dashboardService.getTechnicianWorkload()
+          dashboardService.getTechnicianWorkload(),
+          dashboardService.getLowStock(5)
         ]);
         setSummary(sumRes);
         setRecentRepairs(repRes);
         setTechnicianWorkload(techRes);
+        setLowStockItems(lowStockRes || []);
       } catch (error) {
         console.error("Dashboard synchronization failure", error);
       } finally {
@@ -99,10 +102,10 @@ export default function DashboardPage() {
       {/* Primary Metrics Strip */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Active Repairs", value: summary?.totalRepairs, detail: "Total lifetime", icon: Wrench, trend: "+5.2%", color: "blue" },
-          { label: "Pending Queue", value: summary?.pendingRepairs, detail: "Needs attention", icon: Activity, trend: "-2.1%", color: "amber" },
+          { label: "Active Repairs", value: summary?.activeRepairs, detail: "Tasks in progress", icon: Wrench, trend: "+5.2%", color: "blue" },
+          { label: "Not Started Queue", value: summary?.notStartedRepairs, detail: "Awaiting start", icon: Activity, trend: "-2.1%", color: "amber" },
           { label: "Throughput", value: summary?.completedToday, detail: "Completed today", icon: CheckCircle, trend: "+12.4%", color: "emerald" },
-          ...(isAdmin ? [{ label: "Monthly Gross", value: `₹${Number(summary?.monthlyRevenue || 0).toLocaleString('en-IN')}`, detail: "Current period", icon: DollarSign, trend: "+8.1%", color: "indigo" }] : [{ label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, trend: "+1.2%", color: "indigo" }])
+          ...(isAdmin ? [{ label: "Net Monthly Revenue", value: `₹${Number(summary?.monthlyRevenue || 0).toLocaleString('en-IN')}`, detail: `Gross: ₹${Number(summary?.monthlyGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, trend: "+8.1%", color: "indigo" }] : [{ label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, trend: "+1.2%", color: "indigo" }])
         ].map((stat, i) => (
           <div key={i} className="bg-card border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">
             <div className="flex items-center justify-between mb-4">
@@ -251,6 +254,31 @@ export default function DashboardPage() {
                   <div className="text-lg font-black text-foreground tabular-nums">{vital.value || 0}</div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-6">
+            <h3 className="text-sm font-black tracking-tight uppercase flex items-center gap-2">
+              <Box className="h-4 w-4 text-red-500 animate-pulse" /> Low Stock Details
+            </h3>
+            <div className="space-y-3">
+              {lowStockItems.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">All items have healthy stock levels.</p>
+              ) : (
+                lowStockItems.map((item: any) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border bg-background hover:bg-muted/10 transition-colors">
+                    <div>
+                      <p className="text-[11px] font-black text-foreground">{item.name}</p>
+                      <p className="text-[9px] text-muted-foreground font-bold uppercase">{item.productCode || "No SKU"}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-red-500/10 text-red-500">
+                        {item.stockQuantity} / {item.minimumStock} Left
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
