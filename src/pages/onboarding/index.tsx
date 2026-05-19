@@ -3,7 +3,7 @@ import { userService } from "@/services/user.service";
 import { 
   UserPlus, Mail, Phone, 
   Shield, Trash2, Edit, User, Lock, 
-  AlertCircle, Users, Search
+  AlertCircle, Search
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";

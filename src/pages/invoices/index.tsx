@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { invoiceService } from "@/services/finance.service";
 import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
@@ -25,6 +26,8 @@ import qrScanner from "@/assets/QR_Scanner.png";
 
 export default function InvoicesPage() {
   useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,7 @@ export default function InvoicesPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [repairs, setRepairs] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState("");
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -64,9 +68,21 @@ export default function InvoicesPage() {
   }, [page, search, limit, statusFilter]);
 
   useEffect(() => {
+    if (location.state?.highlightJobId && invoices.length > 0) {
+      const jobId = location.state.highlightJobId;
+      const targetInvoice = invoices.find(inv => inv.repairJobId === jobId);
+      if (targetInvoice) {
+        handleViewInvoice(targetInvoice.id);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, invoices, navigate]);
+
+  useEffect(() => {
     if (isDrawerOpen) {
       loadInitialData();
       setErrors({});
+      setProductSearch("");
     }
   }, [isDrawerOpen]);
 
@@ -98,9 +114,33 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleDownloadInvoice = async (invoice: any) => {
+    setIsDownloading(invoice.id);
+    try {
+      const blob = await invoiceService.generatePDF(invoice.id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Invoice-${invoice.invoiceNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      console.error("Failed to download invoice", error);
+      toast.error("Failed to download invoice");
+    } finally {
+      setIsDownloading(null);
+    }
+  };
+
   const handleAddItem = (product: any) => {
     const existingItem = formData.items.find(item => item.productId === product.id);
     if (existingItem) {
+      if (existingItem.quantity >= product.stockQuantity) {
+        toast.warning(`Cannot add more than available stock (${product.stockQuantity})`);
+        return;
+      }
       const newItems = formData.items.map(item => 
         item.productId === product.id 
           ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
@@ -108,6 +148,10 @@ export default function InvoicesPage() {
       );
       setFormData({ ...formData, items: newItems });
     } else {
+      if (product.stockQuantity <= 0) {
+        toast.warning("This product is out of stock");
+        return;
+      }
       setFormData({ 
         ...formData, 
         items: [
@@ -130,6 +174,14 @@ export default function InvoicesPage() {
     const item = newItems[index];
     if (item.isRepair) return;
     const newQty = Math.max(1, item.quantity + delta);
+
+    // Verify stock limit
+    const product = products.find(p => p.id === item.productId);
+    if (product && newQty > product.stockQuantity) {
+      toast.warning(`Cannot add more than available stock (${product.stockQuantity})`);
+      return;
+    }
+
     newItems[index] = { ...item, quantity: newQty, totalPrice: newQty * item.unitPrice };
     setFormData({ ...formData, items: newItems });
   };
@@ -147,11 +199,14 @@ export default function InvoicesPage() {
   const handleSelectRepair = (repairId: string) => {
     const repair = repairs.find(r => r.id === repairId);
     if (repair) {
+      const paidSoFar = repair.invoices ? repair.invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount), 0) : 0;
+      const remainingBalance = Math.max(0, repair.estimatedCost - paidSoFar);
+
       const repairItem = {
         name: `Repair Job: ${repair.jobNumber} (${repair.brand} ${repair.model})`,
         quantity: 1,
-        unitPrice: repair.estimatedCost,
-        totalPrice: repair.estimatedCost,
+        unitPrice: remainingBalance,
+        totalPrice: remainingBalance,
         isRepair: true
       };
 
@@ -495,6 +550,32 @@ export default function InvoicesPage() {
                   onChange={handleSelectRepair}
                   required
                 />
+                
+                {formData.repairJobId && (() => {
+                  const r = repairs.find(x => x.id === formData.repairJobId);
+                  if (!r) return null;
+                  const paidSoFar = r.invoices ? r.invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount), 0) : 0;
+                  const balance = Math.max(0, r.estimatedCost - paidSoFar);
+                  return (
+                    <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 animate-in fade-in slide-in-from-top-2">
+                       <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Balance Calculation</p>
+                       <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Estimated Total</p>
+                            <p className="text-sm font-black text-foreground tabular-nums">₹{r.estimatedCost.toLocaleString('en-IN')}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-emerald-600/70 uppercase tracking-widest">Paid So Far</p>
+                            <p className="text-sm font-black text-emerald-600 tabular-nums">₹{paidSoFar.toLocaleString('en-IN')}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest">Due Balance</p>
+                            <p className="text-sm font-black text-primary tabular-nums">₹{balance.toLocaleString('en-IN')}</p>
+                          </div>
+                       </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -508,26 +589,49 @@ export default function InvoicesPage() {
                   placeholder="Search products to add..."
                   className="rounded-2xl pr-12"
                   icon={<Search className="h-4 w-4" />}
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
                 />
                 <div className="mt-4 grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                  {products.filter(p => p.stockQuantity > 0).map(product => (
-                    <button
-                      key={product.id}
-                      onClick={() => handleAddItem(product)}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all text-left group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                          <Smartphone className="h-4 w-4" />
+                  {(() => {
+                    const filteredProducts = products.filter(p => {
+                      if (p.stockQuantity <= 0) return false;
+                      if (!productSearch) return true;
+                      const s = productSearch.toLowerCase();
+                      return (
+                        (p.name && p.name.toLowerCase().includes(s)) ||
+                        (p.brand && p.brand.toLowerCase().includes(s)) ||
+                        (p.productCode && p.productCode.toLowerCase().includes(s))
+                      );
+                    });
+
+                    if (filteredProducts.length === 0) {
+                      return (
+                        <div className="py-6 text-center text-xs font-bold text-muted-foreground italic bg-muted/5 rounded-2xl border border-dashed border-border/50">
+                          No matching inventory items in stock.
                         </div>
-                        <div>
-                          <p className="text-xs font-black text-foreground uppercase tracking-tight">{product.name}</p>
-                          <p className="text-[9px] font-bold text-muted-foreground">Stock: {product.stockQuantity} | ₹{Number(product.sellingPrice).toLocaleString()}</p>
+                      );
+                    }
+
+                    return filteredProducts.map(product => (
+                      <button
+                        key={product.id}
+                        onClick={() => handleAddItem(product)}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all text-left group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            <Smartphone className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-foreground uppercase tracking-tight">{product.name}</p>
+                            <p className="text-[9px] font-bold text-muted-foreground">Stock: {product.stockQuantity} | ₹{Number(product.sellingPrice).toLocaleString()}</p>
+                          </div>
                         </div>
-                      </div>
-                      <Plus className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
+                        <Plus className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ));
+                  })()}
                 </div>
               </div>
             </div>

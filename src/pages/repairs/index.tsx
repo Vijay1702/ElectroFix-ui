@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
@@ -17,6 +18,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function RepairsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
   const isAdmin = userRole === "ADMIN";
@@ -162,13 +164,26 @@ export default function RepairsPage() {
       if (!payload.expectedDeliveryDate) delete payload.expectedDeliveryDate;
       if (!payload.brand) delete payload.brand;
       if (!payload.model) delete payload.model;
+      
+      let createdJob: any = null;
       if (selectedRepair) {
         await repairService.updateRepair(selectedRepair.id, payload);
       } else {
-        await repairService.createRepair(payload);
+        createdJob = await repairService.createRepair(payload);
       }
       setIsDrawerOpen(false);
       fetchRepairs();
+      
+      if (!selectedRepair && createdJob && payload.advanceAmount && payload.advanceAmount > 0) {
+        navigate("/invoices", { 
+          state: { 
+            autoOpenCreate: false, 
+            highlightJobNumber: createdJob.jobNumber,
+            highlightJobId: createdJob.id,
+            message: `Advance Invoice automatically generated for Job #${createdJob.jobNumber}!`
+          } 
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -221,13 +236,32 @@ export default function RepairsPage() {
       )
     },
     {
-      header: "Estimated Cost",
+      header: "Cost & Balance",
       accessor: "estimatedCost",
-      render: (job) => (
-        <span className="text-xs font-black text-foreground">
-          {job.estimatedCost ? `₹${Number(job.estimatedCost).toLocaleString('en-IN')}` : "-"}
-        </span>
-      )
+      render: (job) => {
+        const estCost = Number(job.estimatedCost || 0);
+        const paid = job.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
+        const balance = Math.max(0, estCost - paid);
+        
+        return (
+          <div className="flex flex-col gap-0.5 min-w-[120px]">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-semibold font-mono text-foreground">₹{estCost.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-muted-foreground">Paid:</span>
+              <span className="font-semibold font-mono text-emerald-400">₹{paid.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between text-[11px] border-t border-border/50 pt-0.5 mt-0.5">
+              <span className="text-muted-foreground font-medium">Balance:</span>
+              <span className={`font-bold font-mono ${balance === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                ₹{balance.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+        );
+      }
     },
     {
       header: "Status",

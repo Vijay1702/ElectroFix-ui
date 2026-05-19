@@ -41,7 +41,9 @@ export default function ProductsPage() {
     sellingPrice: "",
     stockQuantity: "",
     minimumStock: "",
-    description: ""
+    description: "",
+    shelf: "",
+    row: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -81,7 +83,9 @@ export default function ProductsPage() {
         sellingPrice: product.sellingPrice || "",
         stockQuantity: product.stockQuantity || "",
         minimumStock: product.minimumStock || "",
-        description: product.description || ""
+        description: product.description || "",
+        shelf: product.shelf || "",
+        row: product.row || ""
       });
     } else {
       setSelectedProduct(null);
@@ -93,7 +97,9 @@ export default function ProductsPage() {
         sellingPrice: "",
         stockQuantity: "",
         minimumStock: "",
-        description: ""
+        description: "",
+        shelf: "",
+        row: ""
       });
     }
     setIsDrawerOpen(true);
@@ -179,7 +185,14 @@ export default function ProductsPage() {
           </div>
           <div>
             <div className="font-bold text-primary text-sm">{product.name}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Code: {product.productCode}</div>
+            <div className="flex flex-wrap items-center gap-x-2 text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+              <span>Code: {product.productCode}</span>
+              {(product.shelf || product.row) && (
+                <span className="text-primary/70 font-bold">
+                  • Shelf: {product.shelf || "-"} | Row: {product.row || "-"}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -508,6 +521,39 @@ export default function ProductsPage() {
                   error={errors.minimumStock}
                   icon={<AlertTriangle className="h-4 w-4" />} 
                 />
+               </div>
+             )}
+          </div>
+
+          <div className="space-y-6 pt-6 border-t">
+             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Position / Location</label>
+             {isReadOnly ? (
+               <div className="grid grid-cols-2 gap-6 px-1">
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Shelf</p>
+                   <p className="text-base font-bold">{formData.shelf || 'N/A'}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Row</p>
+                   <p className="text-base font-bold">{formData.row || 'N/A'}</p>
+                 </div>
+               </div>
+             ) : (
+               <div className="grid grid-cols-2 gap-4">
+                 <Input 
+                   label="Shelf" 
+                   placeholder="e.g. Shelf A" 
+                   value={formData.shelf}
+                   onChange={(e) => setFormData({...formData, shelf: e.target.value})}
+                   icon={<Package className="h-4 w-4" />} 
+                 />
+                 <Input 
+                   label="Row" 
+                   placeholder="e.g. Row 5" 
+                   value={formData.row}
+                   onChange={(e) => setFormData({...formData, row: e.target.value})}
+                   icon={<Box className="h-4 w-4" />} 
+                 />
                </div>
              )}
           </div>

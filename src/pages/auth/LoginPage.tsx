@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import { LogIn, Mail, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import { LogIn, Mail, Lock, Sparkles } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
 export default function LoginPage() {
