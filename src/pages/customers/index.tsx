@@ -199,7 +199,7 @@ export default function CustomersPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <PageHeader 
         title="Customers" 
         description="Manage your customer database and repair history."
@@ -210,38 +210,109 @@ export default function CustomersPage() {
         }
       />
 
-      <DataTable
-        data={customers}
-        columns={columns}
-        loading={loading}
-        loadingMessage="Loading customers..."
-        emptyMessage="No customers found."
-        toolbar={
-          <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/10">
-            <div className="w-72">
-              <Input 
-                type="text" 
-                placeholder="Search by name, phone, address..." 
-                value={search} 
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
-                icon={<Search className="h-4 w-4" />}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              Total {total} customers
-            </div>
+      {/* Search Toolbar (shared) */}
+      <div className="card-container p-0 overflow-hidden border-border/60 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
+        <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
+          <div className="w-full sm:w-72">
+            <Input 
+              type="text" 
+              placeholder="Search by name, phone, address..." 
+              value={search} 
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
+              icon={<Search className="h-4 w-4" />}
+            />
           </div>
-        }
-        pagination={
-          <Pagination 
-            page={page} 
-            totalPages={Math.ceil(total / limit) || 1} 
-            limit={limit}
-            onPageChange={setPage} 
-            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          <div className="flex items-center justify-between sm:justify-end gap-2 text-sm text-muted-foreground">
+            Total {total} customers
+          </div>
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <DataTable
+            data={customers}
+            columns={columns}
+            loading={loading}
+            loadingMessage="Loading customers..."
+            emptyMessage="No customers found."
+            pagination={
+              <Pagination 
+                page={page} 
+                totalPages={Math.ceil(total / limit) || 1} 
+                limit={limit}
+                onPageChange={setPage} 
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+              />
+            }
           />
-        }
-      />
+        </div>
+
+        {/* Mobile Card List View */}
+        <div className="block md:hidden p-4">
+          {loading ? (
+            <div className="text-center py-10 text-xs text-muted-foreground font-medium">Loading customers...</div>
+          ) : customers.length === 0 ? (
+            <div className="text-center py-10 text-xs text-muted-foreground font-medium">No customers found.</div>
+          ) : (
+            <div className="space-y-3">
+              {customers.map((customer) => (
+                <div 
+                  key={customer.id}
+                  className="bg-background border border-border/25 rounded-2xl p-4 shadow-xs space-y-3 cursor-pointer"
+                  onClick={() => handleOpenView(customer)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm shrink-0">
+                      {customer.fullName?.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-sm text-foreground truncate">{customer.fullName}</div>
+                      <div className="text-[10px] text-primary font-bold">{customer.customerCode}</div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                        onClick={(e) => { e.stopPropagation(); handleOpenForm(customer); }}
+                      >
+                        <FileEdit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                        onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                    <span>{customer.phoneNumber}</span>
+                  </div>
+                  {customer.address && (
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span className="truncate">{customer.address}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="pt-4">
+            <Pagination
+              page={page}
+              totalPages={Math.ceil(total / limit) || 1}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Form Drawer (Create/Edit Sidebar) */}
       <Drawer
@@ -338,9 +409,8 @@ export default function CustomersPage() {
           </div>
 
           <div className="space-y-6 px-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                <div className="space-y-1">
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Phone</p>
                  <p className="text-sm font-medium flex items-center gap-2">
                    <Phone className="h-3.5 w-3.5 text-primary" /> {selectedCustomer?.phoneNumber}
                  </p>

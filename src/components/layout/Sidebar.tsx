@@ -7,7 +7,8 @@ import {
   FileText, 
   UserPlus,
   LogOut,
-  Calendar
+  Calendar,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +16,11 @@ import { useState } from "react";
 import { ConfirmDialog } from "../shared/ConfirmDialog";
 import logoImg from "@/assets/logo.png";
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -42,7 +47,16 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-card border-r flex flex-col h-full">
-      <div className="p-4 flex flex-col items-center justify-center border-b gap-3 bg-primary/5">
+      <div className="p-4 flex flex-col items-center justify-center border-b gap-3 bg-primary/5 relative">
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
         <img 
           src={logoImg} 
           alt="Sri Senthil Spares & Services Logo" 
@@ -62,6 +76,7 @@ const Sidebar = () => {
           <Link
             key={item.path}
             to={item.path}
+            onClick={onClose}
             className={cn(
               "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
               (location.pathname === item.path || (item.path === "/dashboard" && location.pathname === "/"))

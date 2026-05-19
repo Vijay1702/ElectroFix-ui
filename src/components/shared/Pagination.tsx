@@ -13,8 +13,8 @@ export function Pagination({ page, totalPages, limit = 10, onPageChange, onLimit
   const safeTotalPages = isNaN(totalPages) || totalPages < 1 ? 1 : totalPages;
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 bg-muted/5 border-t">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/5 border-t">
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
         {onLimitChange && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Rows per page:</span>

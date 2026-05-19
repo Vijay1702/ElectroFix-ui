@@ -429,7 +429,7 @@ export default function InvoicesPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-700 bg-background/50">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-700 bg-background/50">
       <PageHeader 
         title="Revenue Registry" 
         description="Enterprise-grade billing engine for hardware sales and technical service streams."
@@ -448,15 +448,17 @@ export default function InvoicesPage() {
         emptyMessage="No financial records detected."
         emptyIcon={<Receipt className="h-12 w-12" />}
         toolbar={
-          <div className="w-72 relative group">
-            <Input
-              type="text"
-              placeholder="Search registry..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
-              className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
-            />
+          <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
+            <div className="w-full sm:w-72 relative group">
+              <Input
+                type="text"
+                placeholder="Search registry..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
+                className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
+              />
+            </div>
           </div>
         }
         pagination={
@@ -477,14 +479,14 @@ export default function InvoicesPage() {
         title="Generate Official Invoice"
         size="lg"
         footer={
-          <div className="flex items-center justify-between w-full">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Grand Total</span>
               <span className="text-2xl font-black text-primary tabular-nums">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleFinalize} disabled={isSubmitting}>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
+              <Button variant="primary" className="flex-1 sm:flex-initial" onClick={handleFinalize} disabled={isSubmitting}>
                 {isSubmitting ? "Processing..." : "Finalize & Pay"}
               </Button>
             </div>
@@ -559,7 +561,7 @@ export default function InvoicesPage() {
                   return (
                     <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 animate-in fade-in slide-in-from-top-2">
                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Balance Calculation</p>
-                       <div className="grid grid-cols-3 gap-4">
+                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div>
                             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Estimated Total</p>
                             <p className="text-sm font-black text-foreground tabular-nums">₹{r.estimatedCost.toLocaleString('en-IN')}</p>
@@ -641,7 +643,7 @@ export default function InvoicesPage() {
           <div className="space-y-6 pt-6 border-t border-dashed">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Billing Line Items</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-4">
                 {errors.items && <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">{errors.items}</span>}
                 <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-md uppercase tracking-widest">{formData.items.length} Items</span>
               </div>
@@ -694,7 +696,7 @@ export default function InvoicesPage() {
 
           {/* Payment Terms */}
           <div className="space-y-8 pt-8 border-t-2 border-dashed">
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Payment Terms</label>
                 <div className="flex p-1 bg-muted/30 rounded-xl gap-1">
@@ -767,23 +769,23 @@ export default function InvoicesPage() {
            {selectedInvoiceForView ? (
              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Executive Header */}
-                <div className="px-10 py-10 border-b border-slate-100 dark:border-zinc-800 bg-gradient-to-b from-slate-50/80 to-white dark:from-zinc-900/50 dark:to-zinc-950">
-                   <div className="flex justify-between items-start mb-10">
+                <div className="px-4 py-6 sm:px-10 sm:py-10 border-b border-slate-100 dark:border-zinc-800 bg-gradient-to-b from-slate-50/80 to-white dark:from-zinc-900/50 dark:to-zinc-950">
+                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 sm:mb-10">
                       <div className="space-y-2">
                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/15 mb-2">
                             <Receipt className="h-3.5 w-3.5 text-primary" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-primary">Official Invoice</span>
                          </div>
-                         <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                             {selectedInvoiceForView.invoiceNumber}
                          </h2>
-                         <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
+                         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs font-bold text-slate-400">
                             <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 opacity-60" /> {new Date(selectedInvoiceForView.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                            <span className="h-1 w-1 rounded-full bg-slate-200"></span>
+                            <span className="hidden sm:inline h-1 w-1 rounded-full bg-slate-200"></span>
                             <span className="flex items-center gap-1.5"><Fingerprint className="h-3.5 w-3.5 opacity-60" /> Verified Record</span>
                          </div>
                       </div>
-                      <div className="flex flex-col items-end gap-3">
+                      <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 dark:border-zinc-800">
                          <StatusBadge status={selectedInvoiceForView.paymentStatus} />
                          <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-md border border-emerald-100 dark:border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
                             Authorized Invoice
@@ -791,7 +793,7 @@ export default function InvoicesPage() {
                       </div>
                    </div>
                    
-                   <div className="grid grid-cols-3 gap-10">
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-10">
                       <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
                          <p className="text-xl font-black text-slate-900 dark:text-white tabular-nums">₹{Number(selectedInvoiceForView.grandTotal).toLocaleString('en-IN')}</p>
@@ -803,16 +805,16 @@ export default function InvoicesPage() {
                       <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Payment Mode</p>
                          <p className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-primary"></div>
+                            <span className="h-2 w-2 rounded-full bg-primary inline-block"></span>
                             {selectedInvoiceForView.notes?.split('Method: ')[1]?.split('.')[0] || 'CASH'}
                          </p>
                       </div>
                    </div>
                 </div>
 
-                <div className="p-10 space-y-12 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="p-4 sm:p-10 space-y-8 sm:space-y-12 flex-1 overflow-y-auto custom-scrollbar">
                    {/* Participant Layout */}
-                   <div className="grid grid-cols-2 gap-10">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-10">
                       <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/30 rounded-3xl border border-slate-100 dark:border-zinc-800/50">
                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Bill To</h4>
                          <div className="space-y-3">
@@ -880,7 +882,7 @@ export default function InvoicesPage() {
                    </div>
 
                    {/* Final Summary Row */}
-                   <div className="flex justify-end pr-8 pb-20">
+                   <div className="flex justify-end pr-4 sm:pr-8 pb-20">
                       <div className="w-72 space-y-4">
                          <div className="flex justify-between items-center text-xs font-bold text-slate-400">
                             <span>Subtotal</span>
@@ -903,17 +905,17 @@ export default function InvoicesPage() {
                 </div>
 
                 {/* Executive Command Bar */}
-                <div className="px-10 py-8 border-t border-slate-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl flex justify-between items-center relative z-30">
+                <div className="px-4 py-6 sm:px-10 sm:py-8 border-t border-slate-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl flex flex-col sm:flex-row gap-4 justify-between items-center relative z-30">
                    <div className="flex items-center gap-3">
                       <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                          Live Verification Active
                       </p>
                    </div>
-                   <div className="flex items-center gap-4">
+                   <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-4">
                       <button 
                          onClick={() => setIsViewModalOpen(false)}
-                         className="px-6 py-2.5 text-xs font-black text-slate-500 hover:text-slate-900 transition-colors uppercase tracking-widest"
+                         className="w-full sm:w-auto px-6 py-2.5 text-xs font-black text-slate-500 hover:text-slate-900 transition-colors uppercase tracking-widest text-center"
                       >
                          Discard
                       </button>
@@ -921,7 +923,7 @@ export default function InvoicesPage() {
                          variant="primary" 
                          onClick={() => handleDownloadInvoice(selectedInvoiceForView)}
                          disabled={isDownloading === selectedInvoiceForView.id}
-                         className="rounded-2xl px-10 h-12 font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-indigo-500/20 hover:scale-[1.02] transition-all"
+                         className="rounded-2xl px-10 h-12 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-indigo-500/20 hover:scale-[1.02] transition-all w-full sm:w-auto"
                       >
                          {isDownloading === selectedInvoiceForView.id ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

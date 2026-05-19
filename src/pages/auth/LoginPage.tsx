@@ -87,7 +87,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Login Side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-zinc-950 relative overflow-hidden">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-zinc-950 relative overflow-hidden">
         {/* Soft, studio radial glow centered behind the login card */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(12,185,193,0.1)_0%,transparent_60%)]"></div>
         <div

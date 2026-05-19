@@ -316,7 +316,7 @@ export default function RepairsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <PageHeader
         title="Repair Jobs"
         description={isAdmin ? "Track and manage all device repair tasks." : "View and update your assigned repair tasks."}
@@ -329,56 +329,149 @@ export default function RepairsPage() {
         }
       />
 
-      <DataTable
-        data={repairs}
-        columns={columns}
-        loading={loading}
-        loadingMessage="Loading repair jobs..."
-        emptyMessage="No repair jobs found."
-        toolbar={
-          <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-72">
-                <Input
-                  type="text"
-                  placeholder="Search job number or device..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  icon={<Search className="h-4 w-4" />}
-                />
-              </div>
-              <div className="w-48">
-                <select
-                  className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.25rem'
-                  }}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="not_started">Not Started</option>
-                  <option value="work_in_progress">Work in Progress</option>
-                  <option value="pending_to_deliver">Pending to Deliver</option>
-                  <option value="delivered">Delivered</option>
-                </select>
-              </div>
+      {/* Shared toolbar + dual display */}
+      <div className="card-container p-0 overflow-hidden border-border/60 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
+        {/* Toolbar */}
+        <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
+            <div className="w-full sm:w-72">
+              <Input
+                type="text"
+                placeholder="Search job number or device..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                icon={<Search className="h-4 w-4" />}
+              />
+            </div>
+            <div className="w-full sm:w-48">
+              <select
+                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem center',
+                  backgroundSize: '1.25rem'
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="not_started">Not Started</option>
+                <option value="work_in_progress">Work in Progress</option>
+                <option value="pending_to_deliver">Pending to Deliver</option>
+                <option value="delivered">Delivered</option>
+              </select>
             </div>
           </div>
-        }
-        pagination={
-          <Pagination
-            page={page}
-            totalPages={Math.ceil(total / limit) || 1}
-            limit={limit}
-            onPageChange={setPage}
-            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <DataTable
+            data={repairs}
+            columns={columns}
+            loading={loading}
+            loadingMessage="Loading repair jobs..."
+            emptyMessage="No repair jobs found."
+            pagination={
+              <Pagination
+                page={page}
+                totalPages={Math.ceil(total / limit) || 1}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+              />
+            }
           />
-        }
-      />
+        </div>
+
+        {/* Mobile Card List View */}
+        <div className="block md:hidden p-4">
+          {loading ? (
+            <div className="text-center py-10 text-xs text-muted-foreground font-medium">Loading repair jobs...</div>
+          ) : repairs.length === 0 ? (
+            <div className="text-center py-10 text-xs text-muted-foreground font-medium">No repair jobs found.</div>
+          ) : (
+            <div className="space-y-3">
+              {repairs.map((job) => {
+                const estCost = Number(job.estimatedCost || 0);
+                const paid = job.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
+                const balance = Math.max(0, estCost - paid);
+                return (
+                  <div
+                    key={job.id}
+                    className="bg-background border border-border/25 rounded-2xl p-4 shadow-xs space-y-3 cursor-pointer"
+                    onClick={() => handleOpenDrawer(job, true)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Smartphone className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-black text-sm text-primary">{job.jobNumber}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{job.deviceType} {job.brand}</div>
+                      </div>
+                      <StatusBadge status={job.status} />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground font-medium">{job.customer?.fullName || 'Walk-in'}</span>
+                      <span className="text-muted-foreground">{job.customer?.phoneNumber || ''}</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/10 text-center">
+                      <div className="bg-muted/5 rounded-xl p-2">
+                        <span className="text-[8px] font-bold text-muted-foreground uppercase block">Total</span>
+                        <span className="text-xs font-bold text-foreground">₹{estCost.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="bg-emerald-500/[0.03] border border-emerald-500/10 rounded-xl p-2">
+                        <span className="text-[8px] font-bold text-emerald-600 uppercase block">Paid</span>
+                        <span className="text-xs font-bold text-emerald-600">₹{paid.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className={`rounded-xl p-2 border ${balance === 0 ? 'bg-emerald-500/[0.03] border-emerald-500/10' : 'bg-amber-500/[0.03] border-amber-500/10'}`}>
+                        <span className="text-[8px] font-bold text-muted-foreground uppercase block">Balance</span>
+                        <span className={`text-xs font-bold ${balance === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>₹{balance.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-1 pt-1 border-t border-border/10">
+                      {job.status !== "delivered" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                          onClick={(e) => { e.stopPropagation(); handleOpenDrawer(job, false); }}
+                        >
+                          <FileEdit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {isAdmin && job.status !== "delivered" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(job.id); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="pt-4">
+            <Pagination
+              page={page}
+              totalPages={Math.ceil(total / limit) || 1}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       <ConfirmDialog
@@ -558,7 +651,7 @@ export default function RepairsPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         label="Device Type"
                         required
@@ -586,7 +679,7 @@ export default function RepairsPage() {
                       onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                       disabled={!isAdmin}
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         label="Estimated Cost (₹) *"
                         type="number"

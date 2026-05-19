@@ -114,7 +114,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <PageHeader 
         title="Payments & Transactions" 
         description="Monitor all incoming payments and financial history."
@@ -127,9 +127,9 @@ export default function PaymentsPage() {
 
       <div className="card-container p-0 overflow-hidden flex flex-col min-h-[500px]">
         {/* Toolbar */}
-        <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-72">
+        <div className="px-4 py-4 md:px-6 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-72">
               <Input
                 type="text"
                 placeholder="Search by invoice or reference..."
@@ -142,63 +142,65 @@ export default function PaymentsPage() {
         </div>
 
         {/* Table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Reference No.</TableHead>
-              <TableHead>Invoice</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+        <div className="overflow-x-auto w-full">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                </TableCell>
+                <TableHead>Reference No.</TableHead>
+                <TableHead>Invoice</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
-            ) : payments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  No payment transactions found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              payments.map((pmt) => (
-                <TableRow key={pmt.id}>
-                  <TableCell className="font-medium text-foreground">{pmt.referenceNumber || 'N/A'}</TableCell>
-                  <TableCell>
-                    <div className="font-bold text-primary">{pmt.invoice?.invoiceNumber}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase font-semibold">{pmt.invoice?.customer?.fullName}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider">
-                      <CreditCard className="h-3 w-3" /> {pmt.paymentMethod}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" /> {new Date(pmt.paymentDate).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                      +₹{Number(pmt.paymentAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center">
+                    <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : payments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No payment transactions found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                payments.map((pmt) => (
+                  <TableRow key={pmt.id}>
+                    <TableCell className="font-medium text-foreground">{pmt.referenceNumber || 'N/A'}</TableCell>
+                    <TableCell>
+                      <div className="font-bold text-primary">{pmt.invoice?.invoiceNumber}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">{pmt.invoice?.customer?.fullName}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider">
+                        <CreditCard className="h-3 w-3" /> {pmt.paymentMethod}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm font-medium text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" /> {new Date(pmt.paymentDate).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                        +₹{Number(pmt.paymentAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
         <Pagination 
           page={page} 
@@ -216,13 +218,13 @@ export default function PaymentsPage() {
         title="Record Client Payment"
         size="md"
         footer={
-          <div className="flex gap-3 w-full">
-            <Button variant="outline" className="flex-1" onClick={() => setIsModalOpen(false)}>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button variant="outline" className="flex-1 w-full" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button 
               variant="primary" 
-              className="flex-1" 
+              className="flex-1 w-full" 
               onClick={handleRecordPaymentSubmit} 
               disabled={submitting}
             >
@@ -287,7 +289,7 @@ export default function PaymentsPage() {
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Payment Mode</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: "cash", label: "Cash" },
                     { id: "card", label: "Card" },

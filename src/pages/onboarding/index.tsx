@@ -264,12 +264,12 @@ export default function OnboardingPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       {userToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="bg-card border border-border shadow-2xl rounded-3xl p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border shadow-2xl rounded-3xl p-6 md:p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-4 mb-6">
-              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
                 <AlertCircle className="h-6 w-6" />
               </div>
               <div>
@@ -280,11 +280,11 @@ export default function OnboardingPage() {
             <p className="text-sm text-foreground/80 mb-8 leading-relaxed">
               Are you sure you want to deactivate the personnel profile for <span className="font-black text-foreground">{userToDelete.fullName}</span>? Their status will be marked as <span className="font-bold text-destructive">Inactive</span> and they will be excluded from active attendance rosters, but records will be preserved for payroll reports.
             </p>
-            <div className="flex gap-4 justify-end">
-              <Button variant="outline" onClick={() => setUserToDelete(null)} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest">
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
+              <Button variant="outline" onClick={() => setUserToDelete(null)} className="w-full sm:w-auto h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest">
                 Cancel
               </Button>
-              <Button variant="danger" onClick={confirmDelete} className="h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-destructive/20">
+              <Button variant="danger" onClick={confirmDelete} className="w-full sm:w-auto h-12 px-6 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-destructive/20">
                 Deactivate Profile
               </Button>
             </div>
@@ -301,7 +301,7 @@ export default function OnboardingPage() {
             setEditingUserId(null);
             setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN", perDaySalary: "0" });
             setIsDrawerOpen(true); 
-          }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6">
+          }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6 w-full sm:w-auto">
             <UserPlus className="h-5 w-5" /> Onboard Personnel
           </Button>
         }
@@ -314,8 +314,8 @@ export default function OnboardingPage() {
         loadingMessage="Retrieving Workforce Registry..."
         emptyMessage="No personnel records currently archived."
         toolbar={
-          <div className="px-6 py-4 border-b border-border/50 flex flex-wrap gap-4 items-center justify-between bg-muted/20">
-            <div className="w-72 relative group">
+          <div className="px-4 py-4 md:px-6 border-b border-border/50 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/20">
+            <div className="w-full sm:w-72 relative group">
               <Input
                 type="text"
                 placeholder="Search personnel..."
@@ -344,22 +344,22 @@ export default function OnboardingPage() {
         title={editingUserId ? "Edit Personnel Profile" : "Personnel Onboarding Terminal"}
         size="md"
         footer={
-          <div className="flex gap-4 justify-end w-full">
-            <Button variant="outline" onClick={() => setIsDrawerOpen(false)} className="rounded-xl font-black uppercase tracking-widest text-[10px] px-6 h-12">Cancel</Button>
-            <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting} className="rounded-xl font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-primary/20">
+          <div className="flex flex-col sm:flex-row gap-3 justify-end w-full">
+            <Button variant="outline" onClick={() => setIsDrawerOpen(false)} className="w-full sm:w-auto rounded-xl font-black uppercase tracking-widest text-[10px] px-6 h-12">Cancel</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto rounded-xl font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-primary/20">
               {isSubmitting ? "Processing Integration..." : (editingUserId ? "Save Changes" : "Finalize Onboarding")}
             </Button>
           </div>
         }
       >
         <div className="space-y-10">
-          <div className="relative overflow-hidden bg-primary/5 rounded-[2rem] p-8 border border-primary/10 group">
+          <div className="relative overflow-hidden bg-primary/5 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 border border-primary/10 group">
              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                <UserPlus className="h-24 w-24" />
              </div>
-             <div className="relative z-10 flex items-center gap-6">
-               <div className="h-16 w-16 rounded-[1.25rem] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30">
-                 <Shield className="h-8 w-8" />
+             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+               <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-[1.25rem] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30 shrink-0">
+                 <Shield className="h-6 w-6 sm:h-8 sm:w-8" />
                </div>
                <div>
                  <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-1">Authorization Protocol</p>

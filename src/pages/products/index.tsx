@@ -264,7 +264,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <PageHeader 
         title="Products & Inventory" 
         description="Manage your shop inventory, spare parts, and accessories."
@@ -308,9 +308,9 @@ export default function ProductsPage() {
         emptyIcon={<Package className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />}
         emptyMessage="No products found in inventory."
         toolbar={
-          <div className="px-6 py-4 border-b flex flex-wrap gap-4 items-center justify-between bg-muted/10">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-72">
+          <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center flex-1 w-full">
+              <div className="w-full sm:w-72">
                 <Input
                   type="text"
                   placeholder="Search products or parts..."
@@ -319,7 +319,7 @@ export default function ProductsPage() {
                   icon={<Search className="h-4 w-4" />}
                 />
               </div>
-              <div className="w-48">
+              <div className="w-full sm:w-48">
                 <select
                   className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
                   value={categoryFilter}
@@ -418,7 +418,7 @@ export default function ProductsPage() {
                   error={errors.name}
                   icon={<Tag className="h-4 w-4" />} 
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input 
                     label="Brand" 
                     placeholder="e.g. Apple" 
@@ -468,7 +468,7 @@ export default function ProductsPage() {
                  </div>
                </div>
              ) : (
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input 
                   label="Purchase Price" 
                   required 
@@ -539,7 +539,7 @@ export default function ProductsPage() {
                  </div>
                </div>
              ) : (
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <Input 
                    label="Shelf" 
                    placeholder="e.g. Shelf A" 

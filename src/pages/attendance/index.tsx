@@ -302,7 +302,7 @@ export default function AttendancePage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <PageHeader 
         title="Attendance & Salaries" 
         description={
@@ -314,11 +314,11 @@ export default function AttendancePage() {
 
       {/* Tabs */}
       {isAdmin && (
-        <div className="flex border-b border-border/40 gap-4 mb-2">
+        <div className="flex border-b border-border/40 gap-2 sm:gap-4 mb-2">
           <button
             onClick={() => setActiveTab("attendance")}
             className={cn(
-              "pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all px-2",
+              "pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all px-1 sm:px-2",
               activeTab === "attendance" 
                 ? "border-primary text-primary" 
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -329,7 +329,7 @@ export default function AttendancePage() {
           <button
             onClick={() => setActiveTab("payroll")}
             className={cn(
-              "pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all px-2",
+              "pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all px-1 sm:px-2",
               activeTab === "payroll" 
                 ? "border-primary text-primary" 
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -343,9 +343,9 @@ export default function AttendancePage() {
       {/* 1. ADMIN ATTENDANCE MARKING TAB */}
       {isAdmin && activeTab === "attendance" && (
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-4 items-center justify-between bg-card border border-border/40 rounded-3xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card border border-border/40 rounded-3xl p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                 <CalendarIcon className="h-5 w-5" />
               </div>
               <div>
@@ -353,7 +353,7 @@ export default function AttendancePage() {
                 <span className="text-sm font-black tracking-tight">{date}</span>
               </div>
             </div>
-            <div className="w-56">
+            <div className="w-full sm:w-56">
               <Input
                 type="date"
                 value={date}
@@ -364,20 +364,81 @@ export default function AttendancePage() {
           </div>
 
           <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
-            <DataTable
-              data={employees}
-              columns={dailyColumns}
-              loading={loading}
-              loadingMessage="Retrieving staff roster..."
-              emptyMessage="No technicians are currently onboarded in system."
-            />
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <DataTable
+                data={employees}
+                columns={dailyColumns}
+                loading={loading}
+                loadingMessage="Retrieving staff roster..."
+                emptyMessage="No technicians are currently onboarded in system."
+              />
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="block md:hidden p-4">
+              {loading ? (
+                <div className="text-center py-8 text-xs text-muted-foreground font-medium">Retrieving staff roster...</div>
+              ) : employees.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-foreground font-medium">No technicians are currently onboarded in system.</div>
+              ) : (
+                <div className="space-y-4">
+                  {employees.map((emp) => {
+                    const currentStatus = attendanceRecords[emp.id] || "Present";
+                    return (
+                      <div key={emp.id} className="bg-background border border-border/25 rounded-2xl p-4 shadow-xs space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                            {emp.fullName.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-sm text-foreground truncate">{emp.fullName}</div>
+                            <div className="text-[10px] text-muted-foreground truncate">{emp.email}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Daily Wage Scale</span>
+                          <span className="font-black text-foreground">₹{Number(emp.perDaySalary || 0).toLocaleString('en-IN')}</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/10">
+                          <button
+                            onClick={() => setAttendanceRecords(prev => ({ ...prev, [emp.id]: "Present" }))}
+                            className={cn(
+                              "py-2 text-xs font-black uppercase tracking-widest rounded-xl border transition-all text-center",
+                              currentStatus === "Present"
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold ring-2 ring-emerald-500/10"
+                                : "bg-background border-border/40 text-muted-foreground hover:border-emerald-500/30 hover:text-emerald-600"
+                            )}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => setAttendanceRecords(prev => ({ ...prev, [emp.id]: "Absent" }))}
+                            className={cn(
+                              "py-2 text-xs font-black uppercase tracking-widest rounded-xl border transition-all text-center",
+                              currentStatus === "Absent"
+                                ? "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 font-bold ring-2 ring-red-500/10"
+                                : "bg-background border-border/40 text-muted-foreground hover:border-red-500/30 hover:text-red-600"
+                            )}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             
             <div className="px-6 py-5 border-t border-border/40 flex justify-end bg-muted/20">
               <Button
                 variant="primary"
                 onClick={handleSaveAttendance}
                 disabled={loading || employees.length === 0}
-                className="rounded-xl font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-primary/20"
+                className="w-full sm:w-auto rounded-xl font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-primary/20"
               >
                 {loading ? "Saving Records..." : "Lock Attendance Sheet"}
               </Button>
@@ -390,12 +451,12 @@ export default function AttendancePage() {
       {isAdmin && activeTab === "payroll" && (
         <div className="space-y-6">
           {/* Payroll filter bar */}
-          <div className="flex flex-wrap gap-4 items-center justify-between bg-card border border-border/40 rounded-3xl p-6 shadow-sm">
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card border border-border/40 rounded-3xl p-4 sm:p-6 shadow-sm">
+            <div className="flex gap-3 w-full sm:w-auto">
               <select
                 value={month}
                 onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-                className="h-10 px-4 rounded-xl border border-border/50 bg-background text-xs font-bold"
+                className="flex-1 sm:flex-initial h-10 px-4 rounded-xl border border-border/50 bg-background text-xs font-bold"
               >
                 {monthNames.map((name, i) => (
                   <option key={name} value={i + 1}>{name}</option>
@@ -404,7 +465,7 @@ export default function AttendancePage() {
               <select
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value, 10))}
-                className="h-10 px-4 rounded-xl border border-border/50 bg-background text-xs font-bold"
+                className="flex-1 sm:flex-initial h-10 px-4 rounded-xl border border-border/50 bg-background text-xs font-bold"
               >
                 {[2024, 2025, 2026, 2027].map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -413,13 +474,13 @@ export default function AttendancePage() {
             </div>
 
             {payrollData && (
-              <div className="flex gap-6">
-                <div className="text-right">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Staff</span>
+              <div className="flex justify-between sm:justify-end gap-6 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-border/20">
+                <div className="text-left sm:text-right">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block">Active Staff</span>
                   <p className="text-sm font-black text-foreground">{payrollData.employeesCount} Personnel</p>
                 </div>
-                <div className="text-right border-l border-border/40 pl-6">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total Payroll Outflow</span>
+                <div className="text-left sm:text-right border-l border-border/40 pl-6">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block">Total Outflow</span>
                   <p className="text-sm font-black text-primary">₹{payrollData.totalPayrollCost?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                 </div>
               </div>
@@ -427,13 +488,59 @@ export default function AttendancePage() {
           </div>
 
           <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
-            <DataTable
-              data={payrollData?.payroll || []}
-              columns={payrollColumns}
-              loading={loading}
-              loadingMessage="Calculating payroll metrics..."
-              emptyMessage="No historical payroll found for selected period."
-            />
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <DataTable
+                data={payrollData?.payroll || []}
+                columns={payrollColumns}
+                loading={loading}
+                loadingMessage="Calculating payroll metrics..."
+                emptyMessage="No historical payroll found for selected period."
+              />
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="block md:hidden p-4">
+              {loading ? (
+                <div className="text-center py-8 text-xs text-muted-foreground font-medium">Calculating payroll metrics...</div>
+              ) : (!payrollData?.payroll || payrollData.payroll.length === 0) ? (
+                <div className="text-center py-8 text-xs text-muted-foreground font-medium">No historical payroll found for selected period.</div>
+              ) : (
+                <div className="space-y-4">
+                  {payrollData.payroll.map((p: any) => (
+                    <div key={p.employeeId || p.fullName} className="bg-background border border-border/20 rounded-2xl p-4 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-black text-sm text-foreground">{p.fullName}</div>
+                          <div className="text-[10px] text-muted-foreground tracking-tighter uppercase">{p.role}</div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest block">Salary</span>
+                          <span className="text-sm font-black text-primary">
+                            ₹{Number(p.totalSalary).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/10 text-center">
+                        <div className="bg-muted/5 rounded-xl p-2">
+                          <span className="text-[8px] font-bold text-muted-foreground uppercase block text-ellipsis overflow-hidden whitespace-nowrap">Daily Rate</span>
+                          <span className="text-xs font-bold text-foreground">₹{Number(p.perDaySalary).toFixed(0)}</span>
+                        </div>
+                        <div className="bg-emerald-500/[0.03] border border-emerald-500/10 rounded-xl p-2">
+                          <span className="text-[8px] font-bold text-emerald-600 uppercase block text-ellipsis overflow-hidden whitespace-nowrap">Present</span>
+                          <span className="text-xs font-bold text-emerald-600">{p.presentDays} d</span>
+                        </div>
+                        <div className="bg-red-500/[0.03] border border-red-500/10 rounded-xl p-2">
+                          <span className="text-[8px] font-bold text-red-500 uppercase block text-ellipsis overflow-hidden whitespace-nowrap">Absent</span>
+                          <span className="text-xs font-bold text-red-500">{p.absentDays} d</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -443,26 +550,26 @@ export default function AttendancePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar Box */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-card border border-border/40 rounded-[2rem] p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-card border border-border/40 rounded-[2rem] p-4 sm:p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-black tracking-tight">Work Roster Calendar</h3>
                   <p className="text-xs font-bold text-muted-foreground mt-0.5">Logs for your designated shift schedule</p>
                 </div>
-                <div className="flex items-center gap-3 border border-border/40 rounded-2xl p-1 bg-muted/20">
+                <div className="flex items-center justify-between sm:justify-start gap-3 border border-border/40 rounded-2xl p-1 bg-muted/20 w-full sm:w-auto">
                   <Button variant="ghost" size="icon" onClick={() => changeMonth("prev")} className="h-8 w-8 rounded-xl"><ChevronLeft className="h-4 w-4" /></Button>
-                  <span className="text-xs font-black uppercase tracking-wider">{monthNames[month - 1]} {year}</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-center flex-1 sm:flex-initial">{monthNames[month - 1]} {year}</span>
                   <Button variant="ghost" size="icon" onClick={() => changeMonth("next")} className="h-8 w-8 rounded-xl"><ChevronRight className="h-4 w-4" /></Button>
                 </div>
               </div>
 
               {/* Grid Header */}
-              <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] border-b border-border/20 pb-4">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] font-black text-muted-foreground uppercase tracking-normal sm:tracking-[0.25em] border-b border-border/20 pb-4">
                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
               </div>
 
               {/* Grid Days */}
-              <div className="grid grid-cols-7 gap-3">
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-3">
                 {getCalendarDays().map((dayObj) => {
                   let statusColor = "bg-muted/10 border-border/30 text-muted-foreground";
                   if (dayObj.status === "Present") {
@@ -475,12 +582,12 @@ export default function AttendancePage() {
                     <div
                       key={dayObj.dateString}
                       className={cn(
-                        "aspect-square rounded-2xl border flex flex-col items-center justify-center gap-1 group transition-all hover:scale-105",
+                        "aspect-square rounded-xl sm:rounded-2xl border flex flex-col items-center justify-center gap-0.5 sm:gap-1 group transition-all hover:scale-105",
                         statusColor
                       )}
                     >
                       <span className="text-xs font-black">{dayObj.day}</span>
-                      <span className="text-[7px] font-black uppercase tracking-tighter opacity-80">{dayObj.status}</span>
+                      <span className="hidden sm:block text-[7px] font-black uppercase tracking-tighter opacity-80">{dayObj.status}</span>
                     </div>
                   );
                 })}
@@ -491,7 +598,7 @@ export default function AttendancePage() {
           {/* Earnings / Calculations Info */}
           <div className="space-y-6">
             {/* Wages calculation box */}
-            <div className="bg-card border border-border/40 rounded-[2rem] p-8 shadow-sm relative overflow-hidden group">
+            <div className="bg-card border border-border/40 rounded-[2rem] p-6 sm:p-8 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Briefcase className="h-28 w-28 text-primary" />
               </div>
