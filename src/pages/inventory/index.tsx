@@ -22,6 +22,12 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { useAuth } from "@/contexts/AuthContext";
 
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  return `${apiUrl.replace('/api/v1', '')}${url}`;
+};
 export default function InventoryPage() {
   const { user } = useAuth();
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
@@ -253,21 +259,32 @@ export default function InventoryPage() {
     {
       header: "Product Name",
       accessor: "name",
-      render: (product) => (
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-            <Package className="h-4 w-4" />
-          </div>
-          <div>
-            <div className="font-bold text-sm text-foreground">{product.name}</div>
-            {product.brand && (
-              <div className="text-[10px] text-muted-foreground font-semibold">
-                Brand: {product.brand}
+      render: (product) => {
+        const imageUrl = getImageUrl(product.imageUrl);
+        return (
+          <div className="flex items-center gap-2">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={product.name}
+                className="h-8 w-8 rounded-lg object-cover border border-border flex-shrink-0"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                <Package className="h-4 w-4" />
               </div>
             )}
+            <div>
+              <div className="font-bold text-sm text-foreground">{product.name}</div>
+              {product.brand && (
+                <div className="text-[10px] text-muted-foreground font-semibold">
+                  Brand: {product.brand}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       header: "Category",
@@ -481,89 +498,135 @@ export default function InventoryPage() {
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+        {/* Card 1: Total Parts */}
         <div
           onClick={() => setStockStatusFilter("ALL")}
-          className={`card-container border-l-4 border-l-blue-500 py-5 cursor-pointer hover:shadow-md transition-all ${stockStatusFilter === "ALL" ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}
+          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+            ${stockStatusFilter === "ALL" 
+              ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_8px_30px_rgb(59,130,246,0.15)]' 
+              : 'border-border/50 bg-background/50 hover:border-blue-500/30 hover:bg-blue-500/5 hover:shadow-lg'
+            } backdrop-blur-xl`}
         >
+          {/* Subtle gradient accent */}
+          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-blue-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
+          
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Parts</h3>
-              <p className="text-3xl font-black mt-2">{metrics.totalItems}</p>
+              <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em]">Total Parts</h3>
+              <p className="text-4xl font-black mt-2 tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{metrics.totalItems}</p>
             </div>
-            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg">
+            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "ALL" ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110' : 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white group-hover:scale-110'}`}>
               <Package className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 font-medium">All registered unique products</p>
+          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgb(59,130,246)]"></span>
+            All registered unique products
+          </p>
         </div>
 
+        {/* Card 2: Low Stock */}
         <div
           onClick={() => setStockStatusFilter("LOW_STOCK")}
-          className={`card-container border-l-4 border-l-amber-500 py-5 cursor-pointer hover:shadow-md transition-all ${stockStatusFilter === "LOW_STOCK" ? 'ring-2 ring-amber-500/20 bg-amber-500/5' : ''}`}
+          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+            ${stockStatusFilter === "LOW_STOCK" 
+              ? 'border-amber-500/50 bg-amber-500/10 shadow-[0_8px_30px_rgb(245,158,11,0.15)]' 
+              : 'border-border/50 bg-background/50 hover:border-amber-500/30 hover:bg-amber-500/5 hover:shadow-lg'
+            } backdrop-blur-xl`}
         >
+          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
+          
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                Low Stock <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+              <h3 className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.15em] flex items-center gap-1.5">
+                Low Stock <AlertTriangle className="h-3 w-3" />
               </h3>
-              <p className="text-3xl font-black mt-2 text-amber-500">{metrics.lowStock}</p>
+              <p className="text-4xl font-black mt-2 tracking-tight text-amber-600 dark:text-amber-500 drop-shadow-sm">{metrics.lowStock}</p>
             </div>
-            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg">
+            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "LOW_STOCK" ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-110' : 'bg-amber-500/10 text-amber-600 dark:text-amber-500 group-hover:bg-amber-500 group-hover:text-white group-hover:scale-110'}`}>
               <AlertTriangle className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 font-medium">Items near or below alert levels</p>
+          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgb(245,158,11)] animate-pulse"></span>
+            Items near or below alert levels
+          </p>
         </div>
 
+        {/* Card 3: Out of Stock */}
         <div
           onClick={() => setStockStatusFilter("OUT_OF_STOCK")}
-          className={`card-container border-l-4 border-l-red-500 py-5 cursor-pointer hover:shadow-md transition-all ${stockStatusFilter === "OUT_OF_STOCK" ? 'ring-2 ring-red-500/20 bg-red-500/5' : ''}`}
+          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+            ${stockStatusFilter === "OUT_OF_STOCK" 
+              ? 'border-red-500/50 bg-red-500/10 shadow-[0_8px_30px_rgb(239,68,68,0.15)]' 
+              : 'border-border/50 bg-background/50 hover:border-red-500/30 hover:bg-red-500/5 hover:shadow-lg'
+            } backdrop-blur-xl`}
         >
+          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-red-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
+          
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Out of Stock</h3>
-              <p className="text-3xl font-black mt-2 text-red-500">{metrics.outOfStock}</p>
+              <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.15em]">Out of Stock</h3>
+              <p className="text-4xl font-black mt-2 tracking-tight text-red-500 drop-shadow-sm">{metrics.outOfStock}</p>
             </div>
-            <div className="p-2 bg-red-500/10 text-red-500 rounded-lg">
+            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "OUT_OF_STOCK" ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110' : 'bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white group-hover:scale-110'}`}>
               <Box className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 font-medium">Items currently with zero stock</p>
+          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgb(239,68,68)]"></span>
+            Items currently with zero stock
+          </p>
         </div>
 
+        {/* Card 4: Value / Healthy */}
         {isAdmin ? (
-          <div className="card-container border-l-4 border-l-green-500 py-5">
+          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-background/50 p-5 hover:border-green-500/40 hover:bg-green-500/5 hover:shadow-lg transition-all duration-300 group hover:-translate-y-1 backdrop-blur-xl">
+            <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-green-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
+            
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Stock Assets Value</h3>
-                <p className="text-3xl font-black mt-2 text-green-600 dark:text-green-400">
+                <h3 className="text-[10px] font-black text-green-600 dark:text-green-500 uppercase tracking-[0.15em]">Stock Assets Value</h3>
+                <p className="text-3xl sm:text-4xl font-black mt-2 tracking-tight text-green-600 dark:text-green-400 drop-shadow-sm">
                   ₹{metrics.stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="p-2 bg-green-500/10 text-green-500 rounded-lg">
+              <div className="p-3 rounded-2xl bg-green-500/10 text-green-600 dark:text-green-500 group-hover:bg-green-500 group-hover:text-white group-hover:scale-110 transition-all duration-300">
                 <DollarSign className="h-5 w-5" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 font-medium">Estimated cost value of stored stock</p>
+            <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgb(34,197,94)]"></span>
+              Estimated cost value of stored stock
+            </p>
           </div>
         ) : (
           <div
             onClick={() => setStockStatusFilter("HEALTHY")}
-            className={`card-container border-l-4 border-l-green-500 py-5 cursor-pointer hover:shadow-md transition-all ${stockStatusFilter === "HEALTHY" ? 'ring-2 ring-green-500/20 bg-green-500/5' : ''}`}
+            className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+              ${stockStatusFilter === "HEALTHY" 
+                ? 'border-green-500/50 bg-green-500/10 shadow-[0_8px_30px_rgb(34,197,94,0.15)]' 
+                : 'border-border/50 bg-background/50 hover:border-green-500/30 hover:bg-green-500/5 hover:shadow-lg'
+              } backdrop-blur-xl`}
           >
+            <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-green-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
+            
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Healthy Stock</h3>
-                <p className="text-3xl font-black mt-2 text-green-600 dark:text-green-400">
+                <h3 className="text-[10px] font-black text-green-600 dark:text-green-500 uppercase tracking-[0.15em]">Healthy Stock</h3>
+                <p className="text-4xl font-black mt-2 tracking-tight text-green-600 dark:text-green-400 drop-shadow-sm">
                   {metrics.totalItems - metrics.lowStock - metrics.outOfStock}
                 </p>
               </div>
-              <div className="p-2 bg-green-500/10 text-green-500 rounded-lg">
+              <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "HEALTHY" ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-110' : 'bg-green-500/10 text-green-600 dark:text-green-500 group-hover:bg-green-500 group-hover:text-white group-hover:scale-110'}`}>
                 <Layers className="h-5 w-5" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 font-medium">Stored parts with healthy levels</p>
+            <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgb(34,197,94)]"></span>
+              Stored parts with healthy levels
+            </p>
           </div>
         )}
       </div>

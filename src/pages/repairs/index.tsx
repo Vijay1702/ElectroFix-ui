@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
-import { Calendar, Smartphone, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
+import { Calendar, Smartphone, CheckCircle2, Edit3, Trash } from "lucide-react";
 
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -238,8 +238,10 @@ export default function RepairsPage() {
       cellClassName: "text-right",
       render: (job) => {
         const estCost = Number(job.estimatedCost || 0);
+        const productCost = job.invoices?.reduce((sum: number, inv: any) => sum + (inv.items?.filter((i: any) => i.itemType !== 'REPAIR' && i.itemType !== 'SERVICE').reduce((s: number, i: any) => s + Number(i.totalPrice || 0), 0) || 0), 0) || 0;
         const paid = job.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
-        const balance = Math.max(0, estCost - paid);
+        const totalDue = estCost + productCost;
+        const balance = Math.max(0, totalDue - paid);
         return (
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-sm font-semibold text-foreground tabular-nums">₹{estCost.toLocaleString('en-IN')}</span>
@@ -269,32 +271,28 @@ export default function RepairsPage() {
       headerClassName: "text-right",
       cellClassName: "text-right",
       render: (job) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-4">
           {job.status !== "delivered" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+            <button
+              className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenDrawer(job, false);
               }}
             >
-              <FileEdit className="h-4 w-4" />
-            </Button>
+              <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+            </button>
           )}
           {isAdmin && job.status !== "delivered" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+            <button
+              className="text-red-500 hover:text-red-600 transition-colors bg-transparent outline-none"
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteConfirmId(job.id);
               }}
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+              <Trash className="h-[18px] w-[18px] stroke-[2]" />
+            </button>
           )}
         </div>
       )
@@ -344,8 +342,10 @@ export default function RepairsPage() {
             <div className="space-y-3">
               {repairs.map((job) => {
                 const estCost = Number(job.estimatedCost || 0);
+                const productCost = job.invoices?.reduce((sum: number, inv: any) => sum + (inv.items?.filter((i: any) => i.itemType !== 'REPAIR' && i.itemType !== 'SERVICE').reduce((s: number, i: any) => s + Number(i.totalPrice || 0), 0) || 0), 0) || 0;
                 const paid = job.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
-                const balance = Math.max(0, estCost - paid);
+                const totalDue = estCost + productCost;
+                const balance = Math.max(0, totalDue - paid);
                 return (
                   <div
                     key={job.id}
@@ -383,26 +383,22 @@ export default function RepairsPage() {
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-1 pt-1 border-t border-border/10">
+                    <div className="flex items-center justify-end gap-4 mt-3 pt-3 border-t border-border/50">
                       {job.status !== "delivered" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                        <button
+                          className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
                           onClick={(e) => { e.stopPropagation(); handleOpenDrawer(job, false); }}
                         >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
+                          <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+                        </button>
                       )}
                       {isAdmin && job.status !== "delivered" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                        <button
+                          className="text-red-500 hover:text-red-600 transition-colors bg-transparent outline-none"
                           onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(job.id); }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Trash className="h-[18px] w-[18px] stroke-[2]" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -587,16 +583,6 @@ export default function RepairsPage() {
                       <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Model Name/Number</p>
                       <p className="text-base font-bold">{formData.model || 'N/A'}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Estimated Cost</p>
-                        <p className="text-base font-bold">{formData.estimatedCost ? `₹${Number(formData.estimatedCost).toLocaleString('en-IN')}` : 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Advance Collected</p>
-                        <p className="text-base font-bold">{formData.advanceAmount ? `₹${Number(formData.advanceAmount).toLocaleString('en-IN')}` : 'N/A'}</p>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <div className="grid gap-4">
@@ -679,6 +665,85 @@ export default function RepairsPage() {
               </div>
             </div>
           </div>
+
+          {isReadOnly && selectedRepair && (
+            <div className="space-y-4 pt-6 border-t">
+              {(() => {
+                const estCost = Number(formData.estimatedCost || 0);
+                const productCost = selectedRepair?.invoices?.reduce((sum: number, inv: any) => sum + (inv.items?.filter((i: any) => i.itemType !== 'REPAIR' && i.itemType !== 'SERVICE').reduce((s: number, i: any) => s + Number(i.totalPrice || 0), 0) || 0), 0) || 0;
+                const paid = selectedRepair?.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
+                const productBalance = Math.max(0, productCost - paid);
+                const repairPayment = Math.max(0, paid - productCost);
+                const repairBalance = Math.max(0, estCost - repairPayment);
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <h4 className="text-[10px] font-bold text-foreground uppercase tracking-[0.2em]">Payment History & Balance</h4>
+                      <div className="flex items-center gap-6 sm:gap-8 text-right">
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Total Job Cost</p>
+                          <p className="text-sm font-black text-foreground">₹{(estCost + productCost).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Total Remaining Balance</p>
+                          <p className="text-lg font-black text-amber-600">₹{(productBalance + repairBalance).toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {selectedRepair?.invoices?.length > 0 ? (
+                      <div className="border border-border/50 rounded-2xl overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-muted/30 border-b border-border/50">
+                            <tr>
+                              <th className="px-4 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Date & Time</th>
+                              <th className="px-4 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Details</th>
+                              <th className="px-4 py-3 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">Bill Total</th>
+                              <th className="px-4 py-3 text-right text-[10px] font-black text-emerald-600 uppercase tracking-widest">Paid</th>
+                              <th className="px-4 py-3 text-right text-[10px] font-black text-amber-600 uppercase tracking-widest">Balance</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border/50">
+                            {selectedRepair.invoices.map((inv: any) => {
+                              const invTotal = Number(inv.grandTotal || 0);
+                              const invPaid = Number(inv.paidAmount || 0);
+                              const invBal = Math.max(0, invTotal - invPaid);
+                              return (
+                                <tr key={inv.id} className="hover:bg-muted/5 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <p className="text-xs font-bold text-foreground">{new Date(inv.invoiceDate).toLocaleDateString('en-IN')}</p>
+                                    <p className="text-[10px] font-medium text-muted-foreground">{new Date(inv.invoiceDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <p className="text-[10px] font-bold text-primary mb-1">{inv.invoiceNumber}</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {inv.items?.map((item: any, idx: number) => (
+                                        <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-muted text-muted-foreground uppercase">
+                                          {item.itemType === 'REPAIR' || item.itemType === 'SERVICE' ? 'Service' : 'Product'}: {item.itemName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-xs font-bold text-foreground tabular-nums">₹{invTotal.toLocaleString('en-IN')}</td>
+                                  <td className="px-4 py-3 text-right text-xs font-bold text-emerald-600 tabular-nums">₹{invPaid.toLocaleString('en-IN')}</td>
+                                  <td className="px-4 py-3 text-right text-xs font-bold text-amber-600 tabular-nums">₹{invBal.toLocaleString('en-IN')}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="bg-muted/5 p-4 rounded-2xl border border-border/50 text-center">
+                        <p className="text-xs font-bold text-muted-foreground">No payments recorded yet.</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Timeline/History (Static for now) */}
           <div className="space-y-4 pt-6 border-t">

@@ -191,8 +191,10 @@ export default function InvoicesPage() {
   const handleSelectRepair = (repairId: string) => {
     const repair = repairs.find(r => r.id === repairId);
     if (repair) {
-      const paidSoFar = repair.invoices ? repair.invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount), 0) : 0;
-      const remainingBalance = Math.max(0, repair.estimatedCost - paidSoFar);
+      const estCost = Number(repair.estimatedCost || 0);
+      const productCost = repair.invoices?.reduce((sum: number, inv: any) => sum + (inv.items?.filter((i: any) => i.itemType !== 'REPAIR' && i.itemType !== 'SERVICE').reduce((s: number, i: any) => s + Number(i.totalPrice || 0), 0) || 0), 0) || 0;
+      const totalPaid = repair.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
+      const remainingBalance = Math.max(0, (estCost + productCost) - totalPaid);
 
       const repairItem = {
         name: `Repair Job: ${repair.jobNumber} (${repair.brand} ${repair.model})`,
@@ -393,13 +395,13 @@ export default function InvoicesPage() {
       render: (inv) => <StatusBadge status={inv.paymentStatus} />,
     },
     {
-      header: "Amount",
-      accessor: "grandTotal",
+      header: "Amount Paid",
+      accessor: "paidAmount",
       headerClassName: "text-right",
       cellClassName: "text-right",
       render: (inv) => (
         <span className="font-semibold text-sm text-foreground tabular-nums">
-          ₹{Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          ₹{Number(inv.paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </span>
       )
     },
@@ -459,8 +461,12 @@ export default function InvoicesPage() {
         footer={
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Grand Total</span>
-              <span className="text-2xl font-black text-primary tabular-nums">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                {paymentType === "PARTIAL" ? "Advance Collected" : "Grand Total"}
+              </span>
+              <span className="text-2xl font-black text-primary tabular-nums">
+                ₹{(paymentType === "PARTIAL" ? Number(formData.paidAmount || 0) : grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
               <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
@@ -485,6 +491,7 @@ export default function InvoicesPage() {
                   key={type.id}
                   onClick={() => {
                     setInvoiceType(type.id as any);
+                    if (type.id === "PRODUCT" && paymentType === "PARTIAL") setPaymentType("FULL");
                     setFormData({ ...formData, items: [], repairJobId: "" });
                     setErrors({});
                   }}
@@ -534,25 +541,27 @@ export default function InvoicesPage() {
                 {formData.repairJobId && (() => {
                   const r = repairs.find(x => x.id === formData.repairJobId);
                   if (!r) return null;
-                  const paidSoFar = r.invoices ? r.invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount), 0) : 0;
-                  const balance = Math.max(0, r.estimatedCost - paidSoFar);
+                  const estCost = Number(r.estimatedCost || 0);
+                  const productCost = r.invoices?.reduce((sum: number, inv: any) => sum + (inv.items?.filter((i: any) => i.itemType !== 'REPAIR' && i.itemType !== 'SERVICE').reduce((s: number, i: any) => s + Number(i.totalPrice || 0), 0) || 0), 0) || 0;
+                  const totalPaid = r.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
+                  const balance = Math.max(0, (estCost + productCost) - totalPaid);
                   return (
                     <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 animate-in fade-in slide-in-from-top-2">
-                       <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Balance Calculation</p>
-                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Estimated Total</p>
-                            <p className="text-sm font-black text-foreground tabular-nums">₹{r.estimatedCost.toLocaleString('en-IN')}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-bold text-emerald-600/70 uppercase tracking-widest">Paid So Far</p>
-                            <p className="text-sm font-black text-emerald-600 tabular-nums">₹{paidSoFar.toLocaleString('en-IN')}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest">Due Balance</p>
-                            <p className="text-sm font-black text-primary tabular-nums">₹{balance.toLocaleString('en-IN')}</p>
-                          </div>
-                       </div>
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Balance Calculation</p>
+                      <div className="flex gap-8">
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Total Job Cost</p>
+                          <p className="text-sm font-black text-foreground tabular-nums">₹{(estCost + productCost).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">Paid So Far</p>
+                          <p className="text-sm font-black text-emerald-600 tabular-nums">₹{totalPaid.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-primary/70 uppercase mb-1">Due Balance</p>
+                          <p className="text-sm font-black text-primary tabular-nums">₹{balance.toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -678,7 +687,7 @@ export default function InvoicesPage() {
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Payment Terms</label>
                 <div className="flex p-1 bg-muted/30 rounded-xl gap-1">
-                  {["FULL", "PARTIAL"].map((term) => (
+                  {(invoiceType === "PRODUCT" ? ["FULL"] : ["FULL", "PARTIAL"]).map((term) => (
                     <button
                       key={term}
                       onClick={() => setPaymentType(term as any)}
@@ -712,7 +721,7 @@ export default function InvoicesPage() {
             </div>
 
             {paymentType === "PARTIAL" && (
-              <div className="animate-in slide-in-from-top-2 duration-300">
+              <div className="animate-in slide-in-from-top-2 duration-300 space-y-2">
                 <Input
                   label="Advance Collected"
                   type="number"
@@ -720,6 +729,34 @@ export default function InvoicesPage() {
                   onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
                   icon={<Receipt className="h-4 w-4" />}
                 />
+                {invoiceType === "BOTH" && (
+                  <div className="text-[10px] text-muted-foreground bg-muted/20 p-3 rounded-lg border border-border/50">
+                    {(() => {
+                      const productSubtotal = formData.items.filter(i => !i.isRepair).reduce((sum, i) => sum + Number(i.totalPrice), 0);
+                      const repairSubtotal = formData.items.filter(i => i.isRepair).reduce((sum, i) => sum + Number(i.totalPrice), 0);
+                      const paid = Number(formData.paidAmount || 0);
+                      const paidProduct = Math.min(paid, productSubtotal);
+                      const paidRepair = Math.max(0, paid - productSubtotal);
+                      const productBalance = productSubtotal - paidProduct;
+                      const repairBalance = repairSubtotal - paidRepair;
+                      
+                      return (
+                        <div className="space-y-1.5">
+                          <p className="font-bold text-foreground">Payment Distribution:</p>
+                          <ul className="space-y-0.5 list-disc list-inside">
+                            <li><span className="font-bold text-foreground">₹{paidProduct.toLocaleString()}</span> applied to products.</li>
+                            <li><span className="font-bold text-foreground">₹{paidRepair.toLocaleString()}</span> applied to repair.</li>
+                          </ul>
+                          {(productBalance > 0 || repairBalance > 0) && (
+                            <div className="pt-1 mt-1 border-t border-border/30 text-amber-600 dark:text-amber-500 font-medium">
+                              Unpaid balance (₹{productBalance.toLocaleString()} product + ₹{repairBalance.toLocaleString()} repair) will be carried over to the linked repair job.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
 
@@ -743,180 +780,180 @@ export default function InvoicesPage() {
         title="Invoice Details"
         size="lg"
       >
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
+        <div className="flex flex-col h-full bg-muted/20 font-sans selection:bg-primary/20 selection:text-primary overflow-hidden">
            {selectedInvoiceForView ? (
-             <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Executive Header */}
-                <div className="px-4 py-6 sm:px-10 sm:py-10 border-b border-slate-100 dark:border-zinc-800 bg-gradient-to-b from-slate-50/80 to-white dark:from-zinc-900/50 dark:to-zinc-950">
-                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 sm:mb-10">
-                      <div className="space-y-2">
-                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/15 mb-2">
-                            <Receipt className="h-3.5 w-3.5 text-primary" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Official Invoice</span>
-                         </div>
-                         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                            {selectedInvoiceForView.invoiceNumber}
-                         </h2>
-                         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs font-bold text-slate-400">
-                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 opacity-60" /> {new Date(selectedInvoiceForView.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                            <span className="hidden sm:inline h-1 w-1 rounded-full bg-slate-200"></span>
-                            <span className="flex items-center gap-1.5"><Fingerprint className="h-3.5 w-3.5 opacity-60" /> Verified Record</span>
-                         </div>
-                      </div>
-                      <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 dark:border-zinc-800">
-                         <StatusBadge status={selectedInvoiceForView.paymentStatus} />
-                         <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-md border border-emerald-100 dark:border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-                            Authorized Invoice
-                         </div>
-                      </div>
-                   </div>
+             <div className="flex-1 flex flex-col items-center p-4 sm:p-8 overflow-y-auto custom-scrollbar">
+                
+                {/* A4-like Paper Container */}
+                <div className="w-full max-w-4xl bg-white shadow-xl ring-1 ring-border/5 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col">
                    
-                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-10">
-                      <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
-                         <p className="text-xl font-black text-slate-900 dark:text-white tabular-nums">₹{Number(selectedInvoiceForView.grandTotal).toLocaleString('en-IN')}</p>
+                   {/* Header Section */}
+                   <div className="px-8 py-10 sm:px-12 sm:py-12 border-b border-border/50">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
+                         {/* Company Info */}
+                         <div className="space-y-1">
+                            <h2 className="text-2xl font-black text-foreground tracking-tight">Sri Senthil Spares & Services</h2>
+                            <p className="text-sm text-muted-foreground">Thalayari street, Pattukkottai</p>
+                            <p className="text-sm text-muted-foreground">Thanjavur district, Tamil Nadu - 614601</p>
+                         </div>
+                         
+                         {/* Invoice Meta */}
+                         <div className="text-left sm:text-right space-y-2">
+                            <div className="inline-flex items-center gap-2 mb-2">
+                               <StatusBadge status={selectedInvoiceForView.paymentStatus} />
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl font-black text-primary uppercase tracking-tighter">
+                               INVOICE
+                            </h1>
+                            <p className="text-base font-bold text-foreground">
+                               {selectedInvoiceForView.invoiceNumber}
+                            </p>
+                            <p className="text-sm font-medium text-muted-foreground">
+                               Date: {new Date(selectedInvoiceForView.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                         </div>
                       </div>
-                      <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1.5">Amount Paid</p>
-                         <p className="text-xl font-black text-emerald-600 tabular-nums">₹{Number(selectedInvoiceForView.paidAmount).toLocaleString('en-IN')}</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Payment Mode</p>
-                         <p className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-primary inline-block"></span>
-                            {selectedInvoiceForView.notes?.split('Method: ')[1]?.split('.')[0] || 'CASH'}
+                   </div>
+
+                   {/* Customer Section */}
+                   <div className="px-8 py-8 sm:px-12 border-b border-border/50">
+                      <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Bill To</h4>
+                      <div className="space-y-1">
+                         <p className="text-lg font-bold text-foreground">
+                            {selectedInvoiceForView.customer?.fullName}
                          </p>
-                      </div>
-                   </div>
-                </div>
-
-                <div className="p-4 sm:p-10 space-y-8 sm:space-y-12 flex-1 overflow-y-auto custom-scrollbar">
-                   {/* Participant Layout */}
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-10">
-                      <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/30 rounded-3xl border border-slate-100 dark:border-zinc-800/50">
-                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Bill To</h4>
-                         <div className="space-y-3">
-                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{selectedInvoiceForView.customer?.fullName}</p>
-                            <div className="space-y-1.5">
-                               <p className="text-xs font-bold text-slate-500 flex items-center gap-2">
-                                  <div className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center border border-slate-100 dark:border-zinc-700">
-                                     <Smartphone className="h-3.5 w-3.5 opacity-60" />
-                                  </div>
-                                  {selectedInvoiceForView.customer?.phoneNumber}
-                               </p>
-                               <p className="text-xs font-bold text-slate-500 flex items-center gap-2">
-                                  <div className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center border border-slate-100 dark:border-zinc-700">
-                                     <Globe className="h-3.5 w-3.5 opacity-60" />
-                                  </div>
-                                  {selectedInvoiceForView.customer?.email || 'No email registered'}
-                               </p>
-                            </div>
-                         </div>
-                      </div>
-                      <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/30 rounded-3xl border border-slate-100 dark:border-zinc-800/50">
-                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Merchant</h4>
-                         <div className="space-y-3">
-                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Sri Senthil Spares & Services,</p>
-                            <div className="space-y-2 pt-1">
-
-                               <p className="text-xs font-bold text-slate-500">Thalayari street, Pattukkottai, thanjavur district, tamil nadu - 614601</p>
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Ledger Table */}
-                   <div className="space-y-6">
-                      <div className="flex items-center gap-4 px-2">
-                         <h4 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">Service Ledger</h4>
-                         <div className="h-px flex-1 bg-slate-100 dark:border-zinc-800"></div>
-                      </div>
-                      
-                      <div className="border border-slate-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
-                         <table className="w-full border-collapse">
-                            <thead>
-                               <tr className="bg-slate-50/80 dark:bg-zinc-800/50 border-b border-slate-100 dark:border-zinc-800">
-                                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Description</th>
-                                  <th className="px-8 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</th>
-                                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate</th>
-                                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</th>
-                               </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-zinc-800">
-                               {selectedInvoiceForView.items?.map((item: any, idx: number) => (
-                                  <tr key={idx} className="hover:bg-indigo-50/20 dark:hover:bg-indigo-500/5 transition-colors group">
-                                     <td className="px-8 py-6">
-                                        <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">{item.itemName}</p>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.itemType}</span>
-                                     </td>
-                                     <td className="px-8 py-6 text-sm font-bold text-slate-500 text-center tabular-nums">{item.quantity}</td>
-                                     <td className="px-8 py-6 text-sm font-bold text-slate-500 text-right tabular-nums">₹{item.unitPrice.toLocaleString('en-IN')}</td>
-                                     <td className="px-8 py-6 text-sm font-black text-slate-900 dark:text-white text-right tabular-nums">₹{item.totalPrice.toLocaleString('en-IN')}</td>
-                                  </tr>
-                               ))}
-                            </tbody>
-                         </table>
-                      </div>
-                   </div>
-
-                   {/* Final Summary Row */}
-                   <div className="flex justify-end pr-4 sm:pr-8 pb-20">
-                      <div className="w-72 space-y-4">
-                         <div className="flex justify-between items-center text-xs font-bold text-slate-400">
-                            <span>Subtotal</span>
-                            <span className="text-slate-900 dark:text-white tabular-nums">₹{Number(selectedInvoiceForView.subtotal).toLocaleString('en-IN')}</span>
-                         </div>
-                         <div className="flex justify-between items-center text-xs font-bold text-slate-400">
-                            <span>Tax (Exempt)</span>
-                            <span className="text-slate-900 dark:text-white">₹0.00</span>
-                         </div>
-                         <div className="pt-4 border-t-2 border-slate-100 dark:border-zinc-800">
-                            <div className="flex justify-between items-end">
-                               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Audit Total</span>
-                               <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">
-                                  ₹{Number(selectedInvoiceForView.grandTotal).toLocaleString('en-IN')}
-                               </span>
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-
-                {/* Executive Command Bar */}
-                <div className="px-4 py-6 sm:px-10 sm:py-8 border-t border-slate-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl flex flex-col sm:flex-row gap-4 justify-between items-center relative z-30">
-                   <div className="flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                         Live Verification Active
-                      </p>
-                   </div>
-                   <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-4">
-                      <button 
-                         onClick={() => setIsViewModalOpen(false)}
-                         className="w-full sm:w-auto px-6 py-2.5 text-xs font-black text-slate-500 hover:text-slate-900 transition-colors uppercase tracking-widest text-center"
-                      >
-                         Discard
-                      </button>
-                      <Button 
-                         variant="primary" 
-                         onClick={() => handleDownloadInvoice(selectedInvoiceForView)}
-                         disabled={isDownloading === selectedInvoiceForView.id}
-                         className="rounded-2xl px-10 h-12 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-indigo-500/20 hover:scale-[1.02] transition-all w-full sm:w-auto"
-                      >
-                         {isDownloading === selectedInvoiceForView.id ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                         ) : (
-                            <>
-                              <Download className="h-4 w-4" /> Export Report
-                            </>
+                         <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Smartphone className="h-3.5 w-3.5" />
+                            {selectedInvoiceForView.customer?.phoneNumber}
+                         </p>
+                         {selectedInvoiceForView.customer?.email && (
+                            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                               <Globe className="h-3.5 w-3.5" />
+                               {selectedInvoiceForView.customer?.email}
+                            </p>
                          )}
-                      </Button>
+                      </div>
                    </div>
+
+                   {/* Line Items Table */}
+                   <div className="px-8 py-8 sm:px-12 flex-1">
+                      <table className="w-full text-left border-collapse">
+                         <thead>
+                            <tr className="border-b-2 border-border/60">
+                               <th className="py-3 text-[11px] font-black text-muted-foreground uppercase tracking-wider">Item Description</th>
+                               <th className="py-3 text-center text-[11px] font-black text-muted-foreground uppercase tracking-wider w-20">Qty</th>
+                               <th className="py-3 text-right text-[11px] font-black text-muted-foreground uppercase tracking-wider w-32">Rate</th>
+                               <th className="py-3 text-right text-[11px] font-black text-muted-foreground uppercase tracking-wider w-32">Total</th>
+                            </tr>
+                         </thead>
+                         <tbody className="divide-y divide-border/30">
+                            {selectedInvoiceForView.items?.map((item: any, idx: number) => (
+                               <tr key={idx} className="group hover:bg-muted/5 transition-colors">
+                                  <td className="py-4 pr-4">
+                                     <p className="text-sm font-bold text-foreground">{item.itemName}</p>
+                                     <p className="text-[10px] font-medium text-muted-foreground uppercase mt-0.5">{item.itemType}</p>
+                                  </td>
+                                  <td className="py-4 text-sm font-medium text-muted-foreground text-center tabular-nums">{item.quantity}</td>
+                                  <td className="py-4 text-sm font-medium text-muted-foreground text-right tabular-nums">₹{item.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                  <td className="py-4 text-sm font-bold text-foreground text-right tabular-nums">₹{item.totalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                               </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                   </div>
+
+                   {/* Totals Section */}
+                   <div className="px-8 pb-10 sm:px-12 pt-4">
+                      <div className="flex flex-col sm:flex-row justify-between gap-8">
+                         {/* Payment Notes / Info */}
+                         <div className="flex-1 space-y-4 pt-4 border-t sm:border-t-0 sm:pt-0 border-border/50 sm:pr-8">
+                            <div>
+                               <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Payment Details</h4>
+                               <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                  <span className="h-2 w-2 rounded-full bg-primary inline-block"></span>
+                                  {selectedInvoiceForView.notes?.split('Method: ')[1]?.split('.')[0] || 'CASH'}
+                               </p>
+                            </div>
+                            {selectedInvoiceForView.notes && (
+                               <div>
+                                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Notes</h4>
+                                  <p className="text-xs font-medium text-muted-foreground max-w-xs">{selectedInvoiceForView.notes}</p>
+                               </div>
+                            )}
+                         </div>
+
+                         {/* Amounts */}
+                         <div className="w-full sm:w-72 space-y-3">
+                            <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+                               <span>Subtotal</span>
+                               <span className="tabular-nums">₹{Number(selectedInvoiceForView.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+                               <span>Tax</span>
+                               <span className="tabular-nums">₹{Number(selectedInvoiceForView.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            {selectedInvoiceForView.discount > 0 && (
+                               <div className="flex justify-between items-center text-sm font-medium text-rose-500">
+                                  <span>Discount</span>
+                                  <span className="tabular-nums">-₹{Number(selectedInvoiceForView.discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                               </div>
+                            )}
+                            
+                            <div className="pt-3 border-t-2 border-border/50">
+                               <div className="flex justify-between items-center mb-1">
+                                  <span className="text-base font-black text-foreground uppercase tracking-wide">Total Amount</span>
+                                  <span className="text-xl font-black text-foreground tabular-nums">
+                                     ₹{Number(selectedInvoiceForView.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                  </span>
+                               </div>
+                               <div className="flex justify-between items-center text-sm font-bold text-emerald-600">
+                                  <span>Amount Paid</span>
+                                  <span className="tabular-nums">₹{Number(selectedInvoiceForView.paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                               </div>
+                               
+                               {Number(selectedInvoiceForView.grandTotal) - Number(selectedInvoiceForView.paidAmount) > 0 && (
+                                  <div className="flex justify-between items-center text-sm font-bold text-amber-600 mt-1">
+                                     <span>Balance Due</span>
+                                     <span className="tabular-nums">₹{(Number(selectedInvoiceForView.grandTotal) - Number(selectedInvoiceForView.paidAmount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                  </div>
+                               )}
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
                 </div>
              </div>
            ) : (
-             <div className="h-full flex items-center justify-center bg-slate-50/30">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
+             <div className="h-full flex items-center justify-center bg-muted/20">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
+             </div>
+           )}
+
+           {/* Sticky Action Bar */}
+           {selectedInvoiceForView && (
+             <div className="px-6 py-4 bg-white border-t border-border/50 flex justify-end gap-4 shadow-xl z-10 shrink-0">
+                <Button 
+                   variant="outline" 
+                   onClick={() => setIsViewModalOpen(false)}
+                   className="w-full sm:w-auto px-8"
+                >
+                   Close
+                </Button>
+                <Button 
+                   variant="primary" 
+                   onClick={() => handleDownloadInvoice(selectedInvoiceForView)}
+                   disabled={isDownloading === selectedInvoiceForView.id}
+                   className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
+                >
+                   {isDownloading === selectedInvoiceForView.id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                   ) : (
+                      <>
+                        <Download className="h-4 w-4" /> Download PDF
+                      </>
+                   )}
+                </Button>
              </div>
            )}
         </div>

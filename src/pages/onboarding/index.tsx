@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { userService } from "@/services/user.service";
 import { 
   UserPlus, Mail, Phone, 
-  Shield, Trash2, Edit, User, Lock, 
-  AlertCircle
+  Trash, Edit3, Shield, User, Lock, AlertCircle 
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -235,25 +234,21 @@ export default function OnboardingPage() {
       headerClassName: "text-right",
       cellClassName: "text-right",
       render: (u) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <Button 
+        <div className="flex items-center justify-end gap-4">
+          <button 
             onClick={() => handleEditClick(u)} 
             disabled={u.operationalStatus === "Inactive"} 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-30"
+            className="text-indigo-500 hover:text-indigo-600 transition-colors disabled:opacity-30 bg-transparent outline-none"
           >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button 
+            <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+          </button>
+          <button 
             onClick={() => handleDeleteClick(u)} 
             disabled={u.operationalStatus === "Inactive"} 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all disabled:opacity-30"
+            className="text-red-500 hover:text-red-600 transition-colors disabled:opacity-30 bg-transparent outline-none"
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            <Trash className="h-[18px] w-[18px] stroke-[2]" />
+          </button>
         </div>
       )
     }

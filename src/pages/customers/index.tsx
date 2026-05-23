@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { customerService } from "@/services/customer.service";
-import { FileEdit, Trash2, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
+import { Edit3, Trash, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
@@ -168,23 +168,19 @@ export default function CustomersPage() {
       headerClassName: "text-right",
       cellClassName: "text-right",
       render: (customer) => (
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+        <div className="flex items-center justify-end gap-4">
+          <button
+            className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
             onClick={(e) => { e.stopPropagation(); handleOpenForm(customer); }}
           >
-            <FileEdit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+            <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+          </button>
+          <button
+            className="text-red-500 hover:text-red-600 transition-colors bg-transparent outline-none"
             onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            <Trash className="h-[18px] w-[18px] stroke-[2]" />
+          </button>
         </div>
       )
     }
@@ -231,23 +227,19 @@ export default function CustomersPage() {
                       <div className="font-bold text-sm text-foreground truncate">{customer.fullName}</div>
                       <div className="text-[10px] text-primary font-bold">{customer.customerCode}</div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
+                    <div className="flex items-center justify-end gap-4">
+                      <button
+                        className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
                         onClick={(e) => { e.stopPropagation(); handleOpenForm(customer); }}
                       >
-                        <FileEdit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
+                        <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+                      </button>
+                      <button
+                        className="text-red-500 hover:text-red-600 transition-colors bg-transparent outline-none"
                         onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <Trash className="h-[18px] w-[18px] stroke-[2]" />
+                      </button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
