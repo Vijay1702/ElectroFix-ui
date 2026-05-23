@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { customerService } from "@/services/customer.service";
-import { Plus, Search, FileEdit, Trash2, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { FileEdit, Trash2, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
-import { Pagination } from "@/components/shared/Pagination";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -13,10 +11,6 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
 
   // Sidebar/Drawer States
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
@@ -35,14 +29,13 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page, search, limit]);
+  }, []);
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await customerService.getCustomers(page, limit, search);
+      const res = await customerService.getCustomers(1, 1000, "");
       setCustomers(res.data);
-      setTotal(res.total);
     } catch (error) {
       console.error("Failed to fetch customers", error);
     } finally {
@@ -135,32 +128,30 @@ export default function CustomersPage() {
 
   const columns: Column<any>[] = [
     {
-      header: "Code",
+      header: "Customer ID",
       accessor: "customerCode",
       render: (customer) => (
-        <div 
-          className="flex items-center gap-2 cursor-pointer group"
+        <button
+          className="font-semibold text-primary hover:underline text-sm"
           onClick={() => handleOpenView(customer)}
         >
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            <User className="h-4 w-4" />
-          </div>
-          <span className="font-black text-primary">{customer.customerCode}</span>
-        </div>
+          {customer.customerCode}
+        </button>
       )
     },
     {
       header: "Full Name",
       accessor: "fullName",
-      cellClassName: "font-bold text-foreground text-sm"
+      render: (customer) => (
+        <span className="font-semibold text-foreground text-sm">{customer.fullName}</span>
+      )
     },
     {
       header: "Phone Number",
       accessor: "phoneNumber",
-      cellClassName: "font-semibold text-sm",
       render: (customer) => (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Phone className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Phone className="h-3.5 w-3.5 flex-shrink-0" />
           <span>{customer.phoneNumber}</span>
         </div>
       )
@@ -168,8 +159,9 @@ export default function CustomersPage() {
     {
       header: "Address",
       accessor: "address",
-      cellClassName: "text-muted-foreground font-medium text-xs truncate max-w-xs",
-      render: (customer) => customer.address || '-'
+      render: (customer) => (
+        <span className="text-sm text-muted-foreground">{customer.address || '-'}</span>
+      )
     },
     {
       header: "Actions",
@@ -177,17 +169,17 @@ export default function CustomersPage() {
       cellClassName: "text-right",
       render: (customer) => (
         <div className="flex items-center justify-end gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
             onClick={(e) => { e.stopPropagation(); handleOpenForm(customer); }}
           >
             <FileEdit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
             onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setIsDeleteModalOpen(true); }}
           >
@@ -200,52 +192,22 @@ export default function CustomersPage() {
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
-      <PageHeader 
-        title="Customers" 
-        description="Manage your customer database and repair history."
-        action={
-          <Button variant="primary" onClick={() => handleOpenForm()}>
-            <Plus className="h-5 w-5" /> Add Customer
-          </Button>
-        }
-      />
-
-      {/* Search Toolbar (shared) */}
-      <div className="card-container p-0 overflow-hidden border-border/60 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
-        <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
-          <div className="w-full sm:w-72">
-            <Input 
-              type="text" 
-              placeholder="Search by name, phone, address..." 
-              value={search} 
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
-              icon={<Search className="h-4 w-4" />}
-            />
-          </div>
-          <div className="flex items-center justify-between sm:justify-end gap-2 text-sm text-muted-foreground">
-            Total {total} customers
-          </div>
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <DataTable
-            data={customers}
-            columns={columns}
-            loading={loading}
-            loadingMessage="Loading customers..."
-            emptyMessage="No customers found."
-            pagination={
-              <Pagination 
-                page={page} 
-                totalPages={Math.ceil(total / limit) || 1} 
-                limit={limit}
-                onPageChange={setPage} 
-                onLimitChange={(l) => { setLimit(l); setPage(1); }}
-              />
-            }
-          />
-        </div>
+      <div className="hidden md:block">
+        <DataTable
+          data={customers}
+          columns={columns}
+          loading={loading}
+          loadingMessage="Loading customers..."
+          emptyMessage="No customers found."
+          emptyIcon={<User className="h-12 w-12" />}
+          title="Customers"
+          searchable
+          searchPlaceholder="Search by name, phone, address..."
+          paginated
+          onAddClick={() => handleOpenForm()}
+          addLabel="Add Customer"
+        />
+      </div>
 
         {/* Mobile Card List View */}
         <div className="block md:hidden p-4">
@@ -302,17 +264,7 @@ export default function CustomersPage() {
               ))}
             </div>
           )}
-          <div className="pt-4">
-            <Pagination
-              page={page}
-              totalPages={Math.ceil(total / limit) || 1}
-              limit={limit}
-              onPageChange={setPage}
-              onLimitChange={(l) => { setLimit(l); setPage(1); }}
-            />
-          </div>
         </div>
-      </div>
 
       {/* Form Drawer (Create/Edit Sidebar) */}
       <Drawer

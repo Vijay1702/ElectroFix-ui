@@ -3,6 +3,7 @@ import DashboardPage from "@/pages/dashboard";
 import CustomersPage from "@/pages/customers";
 import RepairsPage from "@/pages/repairs";
 import ProductsPage from "@/pages/products";
+import InventoryPage from "@/pages/inventory";
 import InvoicesPage from "@/pages/invoices";
 import PaymentsPage from "@/pages/payments";
 import OnboardingPage from "@/pages/onboarding";
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
       {
         path: "/products",
         element: <ProductsPage />,
+      },
+      {
+        path: "/inventory",
+        element: <InventoryPage />,
       },
       {
         path: "/invoices",

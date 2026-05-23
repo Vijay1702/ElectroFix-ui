@@ -10,10 +10,8 @@ import {
   Receipt, X, Zap, 
   Calendar, Fingerprint
 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import { Pagination } from "@/components/shared/Pagination";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DataTable,type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
@@ -31,11 +29,6 @@ export default function InvoicesPage() {
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
-  const [statusFilter] = useState("");
 
   // Drawer & Form States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -65,7 +58,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [page, search, limit, statusFilter]);
+  }, []);
 
   useEffect(() => {
     if (location.state?.highlightJobId && invoices.length > 0) {
@@ -89,9 +82,8 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await invoiceService.getInvoices(page, limit, search, statusFilter);
+      const res = await invoiceService.getInvoices(1, 1000, "", "");
       setInvoices(res.data);
-      setTotal(res.total);
     } catch (error) {
       console.error("Failed to fetch invoices", error);
     } finally {
@@ -367,25 +359,33 @@ export default function InvoicesPage() {
 
   const columns: Column<any>[] = [
     {
-      header: "Invoice ID",
+      header: "Invoice No.",
       accessor: "invoiceNumber",
-      cellClassName: "font-black text-primary text-xs tracking-tight",
+      render: (inv) => (
+        <span className="font-semibold text-primary text-sm">{inv.invoiceNumber}</span>
+      )
     },
     {
-      header: "Client Profile",
+      header: "Customer Name",
       accessor: "customer",
       render: (inv) => (
-        <>
-          <div className="font-black text-foreground text-sm leading-none mb-1">{inv.customer?.fullName}</div>
-          <div className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase opacity-70">{inv.customer?.customerCode}</div>
-        </>
-      ),
+        <span className="font-semibold text-foreground text-sm">{inv.customer?.fullName}</span>
+      )
+    },
+    {
+      header: "Customer Code",
+      render: (inv) => (
+        <span className="text-sm text-muted-foreground">{inv.customer?.customerCode}</span>
+      )
     },
     {
       header: "Date Issued",
       accessor: "invoiceDate",
-      render: (inv) => new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      cellClassName: "text-xs font-bold text-muted-foreground tabular-nums",
+      render: (inv) => (
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+        </span>
+      )
     },
     {
       header: "Status",
@@ -393,29 +393,33 @@ export default function InvoicesPage() {
       render: (inv) => <StatusBadge status={inv.paymentStatus} />,
     },
     {
-      header: "Valuation",
+      header: "Amount",
       accessor: "grandTotal",
-      render: (inv) => `₹${Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
       headerClassName: "text-right",
-      cellClassName: "text-right font-black text-foreground tabular-nums text-sm",
+      cellClassName: "text-right",
+      render: (inv) => (
+        <span className="font-semibold text-sm text-foreground tabular-nums">
+          ₹{Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        </span>
+      )
     },
     {
-      header: "Controls",
+      header: "Actions",
       accessor: "id",
       headerClassName: "text-right",
       cellClassName: "text-right",
       render: (inv) => (
         <div className="flex items-center justify-end gap-2">
-          <button 
+          <button
             onClick={() => handleViewInvoice(inv.id)}
-            className="h-9 w-9 flex items-center justify-center bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/5 active:scale-90"
+            className="h-8 w-8 flex items-center justify-center bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
           >
             <Eye className="h-4 w-4" />
           </button>
-          <button 
+          <button
             onClick={() => handlePrintInvoice(inv)}
             disabled={isDownloading === inv.id}
-            className="h-9 w-9 flex items-center justify-center bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl transition-all duration-300 shadow-lg shadow-amber-500/5 active:scale-90 disabled:opacity-50"
+            className="h-8 w-8 flex items-center justify-center bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg transition-all disabled:opacity-50"
           >
             {isDownloading === inv.id ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -429,47 +433,21 @@ export default function InvoicesPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-700 bg-background/50">
-      <PageHeader 
-        title="Revenue Registry" 
-        description="Enterprise-grade billing engine for hardware sales and technical service streams."
-        action={
-          <Button variant="primary" onClick={() => setIsDrawerOpen(true)} className="rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all duration-300">
-            <Plus className="h-5 w-5" /> Generate Invoice
-          </Button>
-        }
-      />
+    <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-700">
 
       <DataTable
         data={invoices}
         columns={columns}
         loading={loading}
-        loadingMessage="Loading financial records..."
-        emptyMessage="No financial records detected."
+        loadingMessage="Loading invoices..."
+        emptyMessage="No invoices found."
         emptyIcon={<Receipt className="h-12 w-12" />}
-        toolbar={
-          <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
-            <div className="w-full sm:w-72 relative group">
-              <Input
-                type="text"
-                placeholder="Search registry..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
-                className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
-              />
-            </div>
-          </div>
-        }
-        pagination={
-          <Pagination 
-            page={page} 
-            totalPages={Math.ceil(total / limit)} 
-            limit={limit} 
-            onPageChange={setPage} 
-            onLimitChange={(l) => { setLimit(l); setPage(1); }} 
-          />
-        }
+        title="Revenue Registry"
+        searchable
+        searchPlaceholder="Search invoices..."
+        paginated
+        onAddClick={() => setIsDrawerOpen(true)}
+        addLabel="Generate Invoice"
       />
 
       {/* Invoice Creation Drawer */}

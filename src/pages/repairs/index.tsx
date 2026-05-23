@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
-import { Plus, Search, Calendar, Smartphone, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { Calendar, Smartphone, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
-import { Pagination } from "@/components/shared/Pagination";
+
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
@@ -25,10 +25,6 @@ export default function RepairsPage() {
   
   const [repairs, setRepairs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -58,7 +54,7 @@ export default function RepairsPage() {
 
   useEffect(() => {
     fetchRepairs();
-  }, [page, search, limit, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
     // Only admins need to fetch the full lists for dropdowns
@@ -88,9 +84,8 @@ export default function RepairsPage() {
   const fetchRepairs = async () => {
     setLoading(true);
     try {
-      const res = await repairService.getRepairs(page, limit, search, statusFilter);
+      const res = await repairService.getRepairs(1, 1000, "", statusFilter);
       setRepairs(res.data);
-      setTotal(res.total);
     } catch (error) {
       console.error("Failed to fetch repairs", error);
     } finally {
@@ -204,61 +199,53 @@ export default function RepairsPage() {
       header: "Job No.",
       accessor: "jobNumber",
       render: (job) => (
-        <div 
-          className="flex items-center gap-2 cursor-pointer group"
+        <button
+          className="font-semibold text-primary hover:underline text-sm"
           onClick={() => handleOpenDrawer(job, true)}
         >
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            <Smartphone className="h-4 w-4" />
-          </div>
-          <span className="font-bold text-primary">{job.jobNumber}</span>
-        </div>
+          {job.jobNumber}
+        </button>
       )
     },
     {
-      header: "Device & Issue",
+      header: "Device",
       accessor: "deviceType",
       render: (job) => (
-        <>
-          <div className="font-bold text-foreground text-sm">{job.deviceType} {job.brand}</div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold truncate max-w-[150px]">{job.problemDescription}</div>
-        </>
+        <span className="font-semibold text-foreground text-sm">{job.deviceType}{job.brand ? ` - ${job.brand}` : ''}</span>
       )
     },
     {
-      header: "Customer",
-      accessor: "customer",
+      header: "Issue",
       render: (job) => (
-        <>
-          <div className="font-semibold text-sm">{job.customer?.fullName || 'Walk-in'}</div>
-          <div className="text-[10px] text-muted-foreground font-medium">{job.customer?.phoneNumber || '-'}</div>
-        </>
+        <span className="text-sm text-muted-foreground truncate max-w-[160px] block">{job.problemDescription}</span>
       )
     },
     {
-      header: "Cost & Balance",
-      accessor: "estimatedCost",
+      header: "Customer Name",
+      render: (job) => (
+        <span className="font-semibold text-sm text-foreground">{job.customer?.fullName || 'Walk-in'}</span>
+      )
+    },
+    {
+      header: "Customer Phone",
+      render: (job) => (
+        <span className="text-sm text-muted-foreground">{job.customer?.phoneNumber || '-'}</span>
+      )
+    },
+    {
+      header: "Est. Cost",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
       render: (job) => {
         const estCost = Number(job.estimatedCost || 0);
         const paid = job.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
         const balance = Math.max(0, estCost - paid);
-        
         return (
-          <div className="flex flex-col gap-0.5 min-w-[120px]">
-            <div className="flex justify-between text-[11px]">
-              <span className="text-muted-foreground">Total:</span>
-              <span className="font-semibold font-mono text-foreground">₹{estCost.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-[11px]">
-              <span className="text-muted-foreground">Paid:</span>
-              <span className="font-semibold font-mono text-emerald-400">₹{paid.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-[11px] border-t border-border/50 pt-0.5 mt-0.5">
-              <span className="text-muted-foreground font-medium">Balance:</span>
-              <span className={`font-bold font-mono ${balance === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                ₹{balance.toLocaleString('en-IN')}
-              </span>
-            </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-sm font-semibold text-foreground tabular-nums">₹{estCost.toLocaleString('en-IN')}</span>
+            <span className={`text-xs tabular-nums ${balance === 0 ? 'text-green-600' : 'text-amber-600'}`}>
+              Bal: ₹{balance.toLocaleString('en-IN')}
+            </span>
           </div>
         );
       }
@@ -272,10 +259,9 @@ export default function RepairsPage() {
       header: "Received",
       accessor: "receivedDate",
       render: (job) => (
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          <span>{new Date(job.receivedDate).toLocaleDateString()}</span>
-        </div>
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {new Date(job.receivedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+        </span>
       )
     },
     {
@@ -285,9 +271,9 @@ export default function RepairsPage() {
       render: (job) => (
         <div className="flex items-center justify-end gap-1">
           {job.status !== "delivered" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-blue-500 hover:bg-blue-100/50 rounded-lg"
               onClick={(e) => {
                 e.stopPropagation();
@@ -298,9 +284,9 @@ export default function RepairsPage() {
             </Button>
           )}
           {isAdmin && job.status !== "delivered" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-red-500 hover:bg-red-100/50 rounded-lg"
               onClick={(e) => {
                 e.stopPropagation();
@@ -315,75 +301,38 @@ export default function RepairsPage() {
     }
   ];
 
-  return (
+  return (<>
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
-      <PageHeader
-        title="Repair Jobs"
-        description={isAdmin ? "Track and manage all device repair tasks." : "View and update your assigned repair tasks."}
-        action={
-          isAdmin && (
-            <Button variant="primary" onClick={() => handleOpenDrawer(null, false)}>
-              <Plus className="h-5 w-5" /> New Repair Job
-            </Button>
-          )
-        }
-      />
 
-      {/* Shared toolbar + dual display */}
-      <div className="card-container p-0 overflow-hidden border-border/60 shadow-2xl shadow-black/5 bg-card/50 backdrop-blur-sm">
-        {/* Toolbar */}
-        <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/10">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
-            <div className="w-full sm:w-72">
-              <Input
-                type="text"
-                placeholder="Search job number or device..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4" />}
-              />
-            </div>
-            <div className="w-full sm:w-48">
-              <select
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value="">All Statuses</option>
-                <option value="not_started">Not Started</option>
-                <option value="work_in_progress">Work in Progress</option>
-                <option value="pending_to_deliver">Pending to Deliver</option>
-                <option value="delivered">Delivered</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <DataTable
-            data={repairs}
-            columns={columns}
-            loading={loading}
-            loadingMessage="Loading repair jobs..."
-            emptyMessage="No repair jobs found."
-            pagination={
-              <Pagination
-                page={page}
-                totalPages={Math.ceil(total / limit) || 1}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={(l) => { setLimit(l); setPage(1); }}
-              />
-            }
-          />
-        </div>
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
+        <DataTable
+          data={repairs}
+          columns={columns}
+          loading={loading}
+          loadingMessage="Loading repair jobs..."
+          emptyMessage="No repair jobs found."
+          title="Repair Jobs"
+          searchable
+          searchPlaceholder="Search job number, device, or customer..."
+          paginated
+          onAddClick={isAdmin ? () => handleOpenDrawer(null, false) : undefined}
+          addLabel="New Repair Job"
+          toolbarExtra={
+            <select
+              className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="not_started">Not Started</option>
+              <option value="work_in_progress">Work in Progress</option>
+              <option value="pending_to_deliver">Pending to Deliver</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          }
+        />
+      </div>
 
         {/* Mobile Card List View */}
         <div className="block md:hidden p-4">
@@ -462,13 +411,13 @@ export default function RepairsPage() {
             </div>
           )}
           <div className="pt-4">
-            <Pagination
-              page={page}
-              totalPages={Math.ceil(total / limit) || 1}
-              limit={limit}
-              onPageChange={setPage}
-              onLimitChange={(l) => { setLimit(l); setPage(1); }}
-            />
+
+
+
+
+
+
+
           </div>
         </div>
       </div>
@@ -755,6 +704,6 @@ export default function RepairsPage() {
           </div>
         </div>
       </Drawer>
-    </div>
+    </>
   );
 }

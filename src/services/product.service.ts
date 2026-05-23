@@ -39,5 +39,17 @@ export const productService = {
   getCategories: async () => {
     const response = await axiosInstance.get(API_ENDPOINTS.CATEGORIES.GET_ALL);
     return response.data;
+  },
+
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axiosInstance.post("/uploads/product", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data.data;
   }
 };
+

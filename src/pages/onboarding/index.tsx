@@ -3,13 +3,11 @@ import { userService } from "@/services/user.service";
 import { 
   UserPlus, Mail, Phone, 
   Shield, Trash2, Edit, User, Lock, 
-  AlertCircle, Search
+  AlertCircle
 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { DataTable, type Column } from "@/components/shared/DataTable";
-import { Pagination } from "@/components/shared/Pagination";
 import { Drawer } from "@/components/shared/Drawer";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -17,10 +15,6 @@ import { cn } from "@/lib/utils";
 export default function OnboardingPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -37,14 +31,13 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, limit, search]);
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await userService.getUsers(page, limit, search);
+      const res = await userService.getUsers(1, 1000, '');
       setUsers((res.data || []).filter((u: any) => u.isActive !== false));
-      setTotal(res.total || 0);
     } catch (error) {
       console.error("Failed to fetch users", error);
     } finally {
@@ -166,36 +159,37 @@ export default function OnboardingPage() {
 
   const columns: Column<any>[] = [
     {
-      header: "Personnel Profile",
-      headerClassName: "px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground",
-      cellClassName: "px-6 py-5",
+      header: "Employee ID",
       render: (u) => (
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:scale-110 transition-transform">
-            {u.fullName.charAt(0)}
-          </div>
-          <div>
-            <span className="font-black text-foreground text-sm tracking-tight">{u.fullName}</span>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Employee ID: {u.id.slice(0, 8)}</p>
-          </div>
+        <span className="font-semibold text-primary text-sm">{u.id.slice(0, 8).toUpperCase()}</span>
+      )
+    },
+    {
+      header: "Full Name",
+      render: (u) => (
+        <span className="font-semibold text-foreground text-sm">{u.fullName}</span>
+      )
+    },
+    {
+      header: "Email",
+      render: (u) => (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{u.email}</span>
         </div>
       )
     },
     {
-      header: "Digital Coordinates",
+      header: "Phone",
       render: (u) => (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-xs text-foreground font-bold">
-            <Mail className="h-3.5 w-3.5 text-primary/60" /> {u.email}
-          </div>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-black tracking-wider uppercase">
-            <Phone className="h-3.5 w-3.5 text-primary/60" /> {u.phoneNumber}
-          </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{u.phoneNumber}</span>
         </div>
       )
     },
     {
-      header: "Access Clearance",
+      header: "Role",
       render: (u) => (
         <div className={cn(
           "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.15em]",
@@ -209,7 +203,7 @@ export default function OnboardingPage() {
       )
     },
     {
-      header: "Operational Status",
+      header: "Status",
       render: (u) => (
         <div className="flex items-center gap-2">
           {u.operationalStatus !== "Inactive" ? (
@@ -228,24 +222,26 @@ export default function OnboardingPage() {
     },
     {
       header: "Daily Salary",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
       render: (u) => (
-        <span className="text-xs font-bold text-foreground">
-          ₹{Number(u.perDaySalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <span className="font-semibold text-sm text-foreground">
+          ₹{Number(u.perDaySalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       header: "Actions",
-      headerClassName: "text-right px-6 py-5 font-black uppercase text-[10px] tracking-[0.2em] text-muted-foreground",
-      cellClassName: "text-right px-6 py-5",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
       render: (u) => (
-        <div className="flex items-center justify-end gap-1.5 ">
+        <div className="flex items-center justify-end gap-1.5">
           <Button 
             onClick={() => handleEditClick(u)} 
             disabled={u.operationalStatus === "Inactive"} 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all disabled:opacity-30"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-30"
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -254,7 +250,7 @@ export default function OnboardingPage() {
             disabled={u.operationalStatus === "Inactive"} 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl transition-all disabled:opacity-30"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all disabled:opacity-30"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -292,50 +288,24 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      <PageHeader 
-        title="Workforce Management" 
-        description="Strategically expand your technical team and manage administrative system access."
-        action={
-          <Button variant="primary" onClick={() => { 
-            setErrors({}); 
-            setEditingUserId(null);
-            setFormData({ fullName: "", email: "", phoneNumber: "", password: "", role: "TECHNICIAN", perDaySalary: "0" });
-            setIsDrawerOpen(true); 
-          }} className="rounded-xl shadow-xl shadow-primary/20 h-12 px-6 w-full sm:w-auto">
-            <UserPlus className="h-5 w-5" /> Onboard Personnel
-          </Button>
-        }
-      />
-
-      <DataTable 
-        data={users} 
-        columns={columns} 
-        loading={loading} 
-        loadingMessage="Retrieving Workforce Registry..."
-        emptyMessage="No personnel records currently archived."
-        toolbar={
-          <div className="px-4 py-4 md:px-6 border-b border-border/50 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-muted/20">
-            <div className="w-full sm:w-72 relative group">
-              <Input
-                type="text"
-                placeholder="Search personnel..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                icon={<Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />}
-                className="rounded-xl border-border/50 bg-background/50 focus:bg-background transition-all"
-              />
-            </div>
-          </div>
-        }
-        pagination={
-          <Pagination 
-            page={page} 
-            totalPages={Math.ceil(total / limit)} 
-            limit={limit} 
-            onPageChange={setPage} 
-            onLimitChange={(l) => { setLimit(l); setPage(1); }} 
-          />
-        }
+      <DataTable
+        data={users}
+        columns={columns}
+        loading={loading}
+        loadingMessage="Loading workforce registry..."
+        emptyMessage="No personnel records found."
+        emptyIcon={<User className="h-12 w-12" />}
+        title="Workforce Management"
+        searchable
+        searchPlaceholder="Search personnel..."
+        paginated
+        onAddClick={() => {
+          setErrors({});
+          setEditingUserId(null);
+          setFormData({ fullName: '', email: '', phoneNumber: '', password: '', role: 'TECHNICIAN', perDaySalary: '0' });
+          setIsDrawerOpen(true);
+        }}
+        addLabel="Onboard Personnel"
       />
 
       <Drawer

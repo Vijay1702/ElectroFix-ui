@@ -146,32 +146,32 @@ export default function DashboardPage() {
             </div>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/30">
+                <TableHeader>
                   <TableRow>
-                    <TableHead className="px-6 py-4 font-black uppercase text-[9px] tracking-widest">Job Code</TableHead>
-                    <TableHead className="py-4 font-black uppercase text-[9px] tracking-widest">Client / Origin</TableHead>
-                    <TableHead className="py-4 font-black uppercase text-[9px] tracking-widest">Asset Details</TableHead>
-                    <TableHead className="py-4 font-black uppercase text-[9px] tracking-widest">Status</TableHead>
-                    <TableHead className="text-right px-6 py-4 font-black uppercase text-[9px] tracking-widest">Valuation</TableHead>
+                    <TableHead>Job Code</TableHead>
+                    <TableHead>Client / Origin</TableHead>
+                    <TableHead>Asset Details</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Valuation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentRepairs.map((job) => (
-                    <TableRow key={job.id} className="hover:bg-muted/30 transition-colors cursor-default group">
-                      <TableCell className="px-6 py-4 font-black text-xs text-primary">{job.jobNumber}</TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-[11px] font-bold text-foreground">{job.customer?.fullName}</div>
-                        <div className="text-[9px] font-medium text-muted-foreground">{job.customer?.phoneNumber}</div>
+                    <TableRow key={job.id} className="cursor-default">
+                      <TableCell className="font-semibold text-primary">{job.jobNumber}</TableCell>
+                      <TableCell>
+                        <div className="text-xs font-semibold text-foreground">{job.customer?.fullName}</div>
+                        <div className="text-[10px] text-muted-foreground">{job.customer?.phoneNumber}</div>
                       </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-[11px] font-black text-foreground">{job.brand}</div>
-                        <div className="text-[9px] font-bold text-muted-foreground uppercase">{job.model}</div>
+                      <TableCell>
+                        <div className="text-xs font-bold text-foreground">{job.brand}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase">{job.model}</div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell>
                         <StatusBadge status={job.status} />
                       </TableCell>
-                      <TableCell className="text-right px-6 py-4">
-                        <span className="text-[11px] font-black text-foreground tabular-nums">
+                      <TableCell className="text-right">
+                        <span className="text-xs font-semibold text-foreground tabular-nums">
                           ₹{Number(job.estimatedCost).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                       </TableCell>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
             </h3>
             <div className="grid grid-cols-1 gap-3">
               {[
-                { label: "Inventory Registry", sub: "Stock & Management", icon: Box, path: "/products", color: "blue", adminOnly: false },
+                { label: "Inventory Registry", sub: "Stock & Management", icon: Box, path: "/inventory", color: "blue", adminOnly: false },
                 { label: "Client Records", sub: "CRM & History", icon: Users, path: "/customers", color: "indigo", adminOnly: true },
                 { label: "Financial Registry", sub: "Invoices & Billing", icon: CreditCard, path: "/invoices", color: "emerald", adminOnly: true },
                 { label: "Job Archives", sub: "Historical Records", icon: FileText, path: "/repairs", color: "slate", adminOnly: false }

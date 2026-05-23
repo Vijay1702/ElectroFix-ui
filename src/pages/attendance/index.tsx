@@ -204,7 +204,6 @@ export default function AttendancePage() {
   const dailyColumns: Column<any>[] = [
     {
       header: "Employee Profile",
-      cellClassName: "px-6 py-4",
       render: (emp) => (
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs">
@@ -225,8 +224,8 @@ export default function AttendancePage() {
     },
     {
       header: "Attendance Marking",
-      headerClassName: "text-right px-6",
-      cellClassName: "text-right px-6",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
       render: (emp) => {
         const currentStatus = attendanceRecords[emp.id] || "Present";
         return (
@@ -291,8 +290,8 @@ export default function AttendancePage() {
     },
     {
       header: "Total Calculated Salary",
-      headerClassName: "text-right px-6",
-      cellClassName: "text-right px-6",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
       render: (p) => (
         <span className="text-sm font-black text-primary">
           ₹{Number(p.totalSalary).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -364,14 +363,17 @@ export default function AttendancePage() {
           </div>
 
           <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
-            {/* Desktop Table View */}
-            <div className="hidden md:block">
+          <div className="hidden md:block">
               <DataTable
                 data={employees}
                 columns={dailyColumns}
                 loading={loading}
                 loadingMessage="Retrieving staff roster..."
                 emptyMessage="No technicians are currently onboarded in system."
+                title="Daily Attendance Roster"
+                searchable
+                searchPlaceholder="Search employee..."
+                paginated
               />
             </div>
 
@@ -488,14 +490,17 @@ export default function AttendancePage() {
           </div>
 
           <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
-            {/* Desktop Table View */}
-            <div className="hidden md:block">
+          <div className="hidden md:block">
               <DataTable
                 data={payrollData?.payroll || []}
                 columns={payrollColumns}
                 loading={loading}
                 loadingMessage="Calculating payroll metrics..."
                 emptyMessage="No historical payroll found for selected period."
+                title="Payroll Calculator"
+                searchable
+                searchPlaceholder="Search employee..."
+                paginated
               />
             </div>
 

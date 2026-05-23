@@ -3,7 +3,8 @@ import {
   LayoutDashboard, 
   Users, 
   Wrench, 
-  Box, 
+  Tag,
+  Boxes,
   FileText, 
   UserPlus,
   LogOut,
@@ -32,7 +33,8 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { label: "Attendance", icon: Calendar, path: "/attendance", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Customers", icon: Users, path: "/customers", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN"] },
-    { label: "Products", icon: Box, path: "/products", roles: ["ADMIN", "TECHNICIAN"] },
+    { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN"] },
+    { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN"] },
   ];
 

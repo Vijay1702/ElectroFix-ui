@@ -42,6 +42,11 @@ export const API_ENDPOINTS = {
     LOW_STOCK: "/products/low-stock",
   },
 
+  STOCK_MOVEMENTS: {
+    GET_ALL: "/stock-movements",
+    CREATE: "/stock-movements",
+  },
+
   CATEGORIES: {
     GET_ALL: "/categories",
     CREATE: "/categories",

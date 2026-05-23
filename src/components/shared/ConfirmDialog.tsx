@@ -1,6 +1,7 @@
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 import { AlertCircle, LogOut, Trash2, X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function ConfirmDialog({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div 
         className="bg-card w-full max-w-md rounded-3xl shadow-2xl border overflow-hidden animate-in zoom-in-95 duration-300"
@@ -79,13 +80,17 @@ export function ConfirmDialog({
                 onConfirm();
                 onClose();
               }} 
-              className="flex-1 h-12 rounded-2xl font-semibold shadow-lg shadow-primary/20"
+              className={cn(
+                "flex-1 h-12 rounded-2xl font-semibold shadow-lg",
+                variant === "danger" ? "shadow-destructive/20" : "shadow-primary/20"
+              )}
             >
               {confirmText}
             </Button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
