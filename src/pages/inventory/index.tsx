@@ -196,8 +196,7 @@ export default function InventoryPage() {
       fetchProducts();
     } catch (error) {
       console.error("Location update failed", error);
-      alert("Failed to update storage locations.");
-    } finally {
+      // Error handled globally
       setLocationSubmitting(false);
     }
   };
@@ -248,9 +247,7 @@ export default function InventoryPage() {
       }
     } catch (error: any) {
       console.error("Stock adjustment failed", error);
-      const errMsg = error.response?.data?.message || "Failed to record stock movement.";
-      alert(errMsg);
-    } finally {
+      // Error handled globally
       setAdjustSubmitting(false);
     }
   };
@@ -502,104 +499,95 @@ export default function InventoryPage() {
         {/* Card 1: Total Parts */}
         <div
           onClick={() => setStockStatusFilter("ALL")}
-          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 cursor-pointer border transition-all duration-300
             ${stockStatusFilter === "ALL" 
-              ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_8px_30px_rgb(59,130,246,0.15)]' 
-              : 'border-border/50 bg-background/50 hover:border-blue-500/30 hover:bg-blue-500/5 hover:shadow-lg'
-            } backdrop-blur-xl`}
+              ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' 
+              : 'bg-card border-border hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/20'
+            }`}
         >
-          {/* Subtle gradient accent */}
-          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-blue-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
-          
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em]">Total Parts</h3>
-              <p className="text-4xl font-black mt-2 tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{metrics.totalItems}</p>
+              <h3 className={`text-[11px] font-bold uppercase tracking-wider ${stockStatusFilter === "ALL" ? 'text-blue-100' : 'text-muted-foreground'}`}>Total Parts</h3>
+              <p className="text-4xl font-black mt-1 tracking-tight">{metrics.totalItems}</p>
             </div>
-            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "ALL" ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110' : 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white group-hover:scale-110'}`}>
+            <div className={`p-3 rounded-xl transition-all duration-300 ${stockStatusFilter === "ALL" ? 'bg-white/20 text-white' : 'bg-muted text-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-500/20 dark:group-hover:text-blue-400'}`}>
               <Package className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgb(59,130,246)]"></span>
-            All registered unique products
-          </p>
+          <div className="flex items-center gap-2 mt-auto">
+             <div className={`w-1.5 h-1.5 rounded-full ${stockStatusFilter === "ALL" ? 'bg-blue-200' : 'bg-blue-500'}`}></div>
+             <p className={`text-xs font-semibold ${stockStatusFilter === "ALL" ? 'text-blue-100' : 'text-muted-foreground'}`}>All unique products</p>
+          </div>
         </div>
 
         {/* Card 2: Low Stock */}
         <div
           onClick={() => setStockStatusFilter("LOW_STOCK")}
-          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 cursor-pointer border transition-all duration-300
             ${stockStatusFilter === "LOW_STOCK" 
-              ? 'border-amber-500/50 bg-amber-500/10 shadow-[0_8px_30px_rgb(245,158,11,0.15)]' 
-              : 'border-border/50 bg-background/50 hover:border-amber-500/30 hover:bg-amber-500/5 hover:shadow-lg'
-            } backdrop-blur-xl`}
+              ? 'bg-amber-500 border-amber-500 text-white shadow-xl shadow-amber-500/20' 
+              : 'bg-card border-border hover:border-amber-500/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/20'
+            }`}
         >
-          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
-          
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.15em] flex items-center gap-1.5">
+              <h3 className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${stockStatusFilter === "LOW_STOCK" ? 'text-amber-100' : 'text-amber-600 dark:text-amber-500'}`}>
                 Low Stock <AlertTriangle className="h-3 w-3" />
               </h3>
-              <p className="text-4xl font-black mt-2 tracking-tight text-amber-600 dark:text-amber-500 drop-shadow-sm">{metrics.lowStock}</p>
+              <p className={`text-4xl font-black mt-1 tracking-tight ${stockStatusFilter === "LOW_STOCK" ? 'text-white' : 'text-amber-600 dark:text-amber-500'}`}>{metrics.lowStock}</p>
             </div>
-            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "LOW_STOCK" ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-110' : 'bg-amber-500/10 text-amber-600 dark:text-amber-500 group-hover:bg-amber-500 group-hover:text-white group-hover:scale-110'}`}>
+            <div className={`p-3 rounded-xl transition-all duration-300 ${stockStatusFilter === "LOW_STOCK" ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-500 group-hover:bg-amber-200'}`}>
               <AlertTriangle className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgb(245,158,11)] animate-pulse"></span>
-            Items near or below alert levels
-          </p>
+          <div className="flex items-center gap-2 mt-auto">
+             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${stockStatusFilter === "LOW_STOCK" ? 'bg-amber-200' : 'bg-amber-500'}`}></div>
+             <p className={`text-xs font-semibold ${stockStatusFilter === "LOW_STOCK" ? 'text-amber-100' : 'text-muted-foreground'}`}>Near alert levels</p>
+          </div>
         </div>
 
         {/* Card 3: Out of Stock */}
         <div
           onClick={() => setStockStatusFilter("OUT_OF_STOCK")}
-          className={`relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-300 group hover:-translate-y-1
+          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 cursor-pointer border transition-all duration-300
             ${stockStatusFilter === "OUT_OF_STOCK" 
-              ? 'border-red-500/50 bg-red-500/10 shadow-[0_8px_30px_rgb(239,68,68,0.15)]' 
-              : 'border-border/50 bg-background/50 hover:border-red-500/30 hover:bg-red-500/5 hover:shadow-lg'
-            } backdrop-blur-xl`}
+              ? 'bg-red-500 border-red-500 text-white shadow-xl shadow-red-500/20' 
+              : 'bg-card border-border hover:border-red-500/50 hover:bg-red-50/50 dark:hover:bg-red-900/20'
+            }`}
         >
-          <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-red-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
-          
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.15em]">Out of Stock</h3>
-              <p className="text-4xl font-black mt-2 tracking-tight text-red-500 drop-shadow-sm">{metrics.outOfStock}</p>
+              <h3 className={`text-[11px] font-bold uppercase tracking-wider ${stockStatusFilter === "OUT_OF_STOCK" ? 'text-red-100' : 'text-red-500'}`}>Out of Stock</h3>
+              <p className={`text-4xl font-black mt-1 tracking-tight ${stockStatusFilter === "OUT_OF_STOCK" ? 'text-white' : 'text-red-500'}`}>{metrics.outOfStock}</p>
             </div>
-            <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "OUT_OF_STOCK" ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110' : 'bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white group-hover:scale-110'}`}>
+            <div className={`p-3 rounded-xl transition-all duration-300 ${stockStatusFilter === "OUT_OF_STOCK" ? 'bg-white/20 text-white' : 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-500 group-hover:bg-red-200'}`}>
               <Box className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgb(239,68,68)]"></span>
-            Items currently with zero stock
-          </p>
+          <div className="flex items-center gap-2 mt-auto">
+             <div className={`w-1.5 h-1.5 rounded-full ${stockStatusFilter === "OUT_OF_STOCK" ? 'bg-red-200' : 'bg-red-500'}`}></div>
+             <p className={`text-xs font-semibold ${stockStatusFilter === "OUT_OF_STOCK" ? 'text-red-100' : 'text-muted-foreground'}`}>Zero stock available</p>
+          </div>
         </div>
 
         {/* Card 4: Value / Healthy */}
         {isAdmin ? (
-          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-background/50 p-5 hover:border-green-500/40 hover:bg-green-500/5 hover:shadow-lg transition-all duration-300 group hover:-translate-y-1 backdrop-blur-xl">
-            <div className="absolute top-0 right-0 p-16 bg-gradient-to-br from-green-500/20 to-transparent rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-700 blur-2xl"></div>
-            
-            <div className="flex justify-between items-start">
+          <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 border border-border bg-card hover:border-green-500/50 hover:bg-green-50/50 dark:hover:bg-green-900/20 transition-all duration-300">
+            <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-[10px] font-black text-green-600 dark:text-green-500 uppercase tracking-[0.15em]">Stock Assets Value</h3>
-                <p className="text-3xl sm:text-4xl font-black mt-2 tracking-tight text-green-600 dark:text-green-400 drop-shadow-sm">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-green-600 dark:text-green-500">Stock Assets</h3>
+                <p className="text-3xl font-black mt-1 tracking-tight text-green-600 dark:text-green-500">
                   ₹{metrics.stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="p-3 rounded-2xl bg-green-500/10 text-green-600 dark:text-green-500 group-hover:bg-green-500 group-hover:text-white group-hover:scale-110 transition-all duration-300">
+              <div className="p-3 rounded-xl bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-500 group-hover:bg-green-200 transition-all duration-300">
                 <DollarSign className="h-5 w-5" />
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-4 font-semibold flex items-center gap-1.5 opacity-80">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgb(34,197,94)]"></span>
-              Estimated cost value of stored stock
-            </p>
+            <div className="flex items-center gap-2 mt-auto">
+               <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+               <p className="text-xs font-semibold text-muted-foreground">Total inventory value</p>
+            </div>
           </div>
         ) : (
           <div

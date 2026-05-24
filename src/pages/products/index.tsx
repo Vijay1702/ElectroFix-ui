@@ -11,6 +11,7 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const getImageUrl = (url?: string) => {
   if (!url) return "";
@@ -89,13 +90,13 @@ export default function ProductsPage() {
 
     const validTypes = ["image/jpeg", "image/png", "image/jpg"];
     if (!validTypes.includes(file.type)) {
-      alert("Invalid file format. Only JPG and PNG are supported.");
+      toast.error("Invalid file format. Only JPG and PNG are supported.");
       return;
     }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert("File size exceeds 5MB limit.");
+      toast.error("File size exceeds 5MB limit.");
       return;
     }
 
@@ -107,7 +108,7 @@ export default function ProductsPage() {
       }
     } catch (error) {
       console.error("Failed to upload image", error);
-      alert("Failed to upload image.");
+      toast.error("Failed to upload image.");
     } finally {
       setUploadingImage(false);
     }
@@ -209,9 +210,10 @@ export default function ProductsPage() {
       }
       setIsDrawerOpen(false);
       fetchProducts();
+      toast.success(selectedProduct ? "Product updated successfully" : "Product created successfully");
     } catch (error) {
       console.error("Save failed", error);
-      alert("Failed to save product.");
+      toast.error("Failed to save product.");
     } finally {
       setSubmitting(false);
     }
@@ -222,9 +224,10 @@ export default function ProductsPage() {
       await productService.deleteProduct(id);
       setDeleteConfirmId(null);
       fetchProducts();
-    } catch (error) {
+      toast.success("Product deleted successfully");
+    } catch (error: any) {
       console.error("Delete failed", error);
-      alert("Failed to delete product.");
+      toast.error(error?.response?.data?.message || "Failed to delete product.");
     }
   };
 

@@ -104,8 +104,7 @@ export default function CustomersPage() {
       fetchCustomers();
     } catch (error) {
       console.error("Save failed", error);
-      alert("Failed to save customer data.");
-    } finally {
+      // Error handled by global interceptor
       setSubmitting(false);
     }
   };
@@ -120,8 +119,7 @@ export default function CustomersPage() {
       fetchCustomers();
     } catch (error) {
       console.error("Delete failed", error);
-      alert("Failed to delete customer.");
-    } finally {
+      // Error handled by global interceptor
       setSubmitting(false);
     }
   };

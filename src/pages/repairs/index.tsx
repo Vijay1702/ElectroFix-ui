@@ -102,6 +102,7 @@ export default function RepairsPage() {
         customerId: repair.customerId || "",
         expectedDeliveryDate: repair.expectedDeliveryDate ? new Date(repair.expectedDeliveryDate).toISOString().split('T')[0] : "",
         technicianId: repair.technicianId || "",
+        jobNumber: repair.jobNumber || "",
         deviceType: repair.deviceType || "",
         brand: repair.brand || "",
         model: repair.model || "",
@@ -116,6 +117,7 @@ export default function RepairsPage() {
         customerId: "",
         expectedDeliveryDate: "",
         technicianId: "",
+        jobNumber: "",
         deviceType: "",
         brand: "",
         model: "",
@@ -133,6 +135,7 @@ export default function RepairsPage() {
 
     // Validation
     const newErrors: Record<string, string> = {};
+    if (!formData.jobNumber?.trim()) newErrors.jobNumber = "Job Number is required";
     if (!formData.customerId) newErrors.customerId = "Client Name is required";
     if (!formData.technicianId) newErrors.technicianId = "Assigned To is required";
     if (!formData.deviceType?.trim()) newErrors.deviceType = "Device Type is required";
@@ -179,6 +182,9 @@ export default function RepairsPage() {
           } 
         });
       }
+    } catch (error: any) {
+      console.error("Save failed", error);
+      // Error is handled globally by axios interceptor
     } finally {
       setSubmitting(false);
     }
@@ -571,21 +577,39 @@ export default function RepairsPage() {
                   <div className="space-y-4 px-1">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Job Number</p>
+                        <p className="text-base font-bold">{formData.jobNumber}</p>
+                      </div>
+                      <div>
                         <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Device Type</p>
                         <p className="text-base font-bold">{formData.deviceType}</p>
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Brand</p>
                         <p className="text-base font-bold">{formData.brand || 'N/A'}</p>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Model Name/Number</p>
-                      <p className="text-base font-bold">{formData.model || 'N/A'}</p>
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Model Name/Number</p>
+                        <p className="text-base font-bold">{formData.model || 'N/A'}</p>
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="grid gap-4">
+                    <Input
+                      label="Job Number"
+                      required
+                      placeholder="e.g. REP-001"
+                      value={formData.jobNumber}
+                      onChange={(e) => {
+                        setFormData({ ...formData, jobNumber: e.target.value.toUpperCase() });
+                        if (errors.jobNumber) setErrors({ ...errors, jobNumber: "" });
+                      }}
+                      error={errors.jobNumber}
+                      disabled={!!selectedRepair && !isAdmin}
+                    />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         label="Device Type"
