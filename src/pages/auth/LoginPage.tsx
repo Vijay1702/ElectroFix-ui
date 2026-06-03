@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import { LogIn, Mail, Lock, Sparkles } from "lucide-react";
+import { LogIn, Mail, Lock, Sparkles, Eye, EyeOff } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
 export default function LoginPage() {
@@ -15,6 +15,7 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +141,7 @@ export default function LoginPage() {
               <div className="space-y-1">
                 <Input
                   label="Password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="••••••••"
                   value={formData.password}
@@ -148,16 +149,17 @@ export default function LoginPage() {
                     setFormData({ ...formData, password: e.target.value })
                   }
                   icon={<Lock className="h-4 w-4" />}
+                  endIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none flex items-center justify-center"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  }
                   className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-primary"
                 />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
               </div>
             </div>
 

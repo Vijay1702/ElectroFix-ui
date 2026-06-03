@@ -4,13 +4,14 @@ import { Label } from "./Label";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
+  endIcon?: React.ReactNode;
   label?: string;
   required?: boolean;
   error?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, icon, label, required, error, ...props }, ref) => {
+  ({ className, icon, endIcon, label, required, error, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && <Label required={required}>{label}</Label>}
@@ -29,10 +30,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 ? "border-destructive focus:border-destructive focus:ring-destructive" 
                 : "border-border focus:border-primary focus:ring-primary",
               icon && "pl-10",
+              endIcon && "pr-10",
               className
             )}
             {...props}
           />
+          {endIcon && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {endIcon}
+            </div>
+          )}
         </div>
         {error && <p className="text-[10px] text-destructive mt-1.5 font-medium">{error}</p>}
       </div>
