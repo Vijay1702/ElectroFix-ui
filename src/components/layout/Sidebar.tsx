@@ -9,13 +9,18 @@ import {
   UserPlus,
   LogOut,
   Calendar,
-  X
+  X,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConfirmDialog } from "../shared/ConfirmDialog";
 import logoImg from "@/assets/logo.png";
+import { syncService } from "@/services/sync.service";
+import { toast } from "sonner";
 
 interface SidebarProps {
   onClose?: () => void;
@@ -26,6 +31,69 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const { user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    const updatePendingCount = async () => {
+      const count = await syncService.getPendingCount();
+      setPendingCount(count);
+    };
+
+    updatePendingCount();
+
+    const handleOnline = async () => {
+      setIsOnline(true);
+      toast.success("Internet reconnected. Syncing offline changes...");
+      setSyncing(true);
+      const res = await syncService.sync();
+      setSyncing(false);
+      await updatePendingCount();
+      if (res.success && res.syncedCount > 0) {
+        toast.success(`Successfully synced ${res.syncedCount} changes to the cloud!`);
+      } else if (res.error) {
+        toast.error(`Sync error: ${res.error}`);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning("Internet disconnected. Running in offline mode.");
+    };
+
+    // Check count periodically (every 5 seconds) to catch new offline entries
+    const interval = setInterval(updatePendingCount, 5000);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const handleManualSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    toast.info("Syncing changes...");
+    const res = await syncService.sync();
+    setSyncing(false);
+    const count = await syncService.getPendingCount();
+    setPendingCount(count);
+    if (res.success) {
+      if (res.syncedCount > 0) {
+        toast.success(`Successfully synced ${res.syncedCount} changes!`);
+      } else {
+        toast.info("All data is up to date.");
+      }
+    } else {
+      toast.error(`Failed to sync: ${res.error}`);
+    }
+  };
 
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["ADMIN", "TECHNICIAN"] },
@@ -93,6 +161,40 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       </nav>
       
       <div className="p-4 border-t space-y-4">
+        {/* Network & Sync Status Panel */}
+        <div className="px-3 py-2.5 rounded-xl bg-accent/40 border border-border/40 flex flex-col gap-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-semibold">Network Status:</span>
+            {isOnline ? (
+              <span className="flex items-center gap-1 font-bold text-green-500">
+                <Wifi className="w-3.5 h-3.5" /> Online
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 font-bold text-amber-500 animate-pulse">
+                <WifiOff className="w-3.5 h-3.5" /> Offline
+              </span>
+            )}
+          </div>
+          
+          {pendingCount > 0 && (
+            <div className="flex flex-col gap-1.5 mt-0.5 border-t border-border/40 pt-2">
+              <div className="flex items-center justify-between text-[11px] font-bold">
+                <span className="text-amber-500">{pendingCount} changes pending</span>
+                {isOnline && (
+                  <button
+                    onClick={handleManualSync}
+                    disabled={syncing}
+                    className="px-2 py-0.5 rounded bg-primary text-primary-foreground hover:bg-primary/95 flex items-center justify-center gap-1 disabled:opacity-50 transition-opacity cursor-pointer font-bold text-[10px]"
+                  >
+                    <RefreshCw className={cn("w-3 h-3", syncing && "animate-spin")} />
+                    Sync
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
             <span className="text-sm font-bold text-primary">
