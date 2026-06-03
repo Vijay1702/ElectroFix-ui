@@ -7,8 +7,7 @@ import { repairService } from "@/services/repair.service";
 import { 
   Plus, Search, Eye, Printer, Download,
   Smartphone, Globe, 
-  Receipt, X, Zap, 
-  Calendar, Fingerprint
+  Receipt, X, Zap
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";

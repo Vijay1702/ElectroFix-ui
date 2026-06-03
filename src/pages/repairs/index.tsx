@@ -41,6 +41,7 @@ export default function RepairsPage() {
     customerId: "",
     expectedDeliveryDate: "",
     technicianId: "",
+    jobNumber: "",
     deviceType: "",
     brand: "",
     model: "",
