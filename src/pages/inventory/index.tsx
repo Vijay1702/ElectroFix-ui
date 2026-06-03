@@ -26,7 +26,12 @@ const getImageUrl = (url?: string) => {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
-  return `${apiUrl.replace('/api/v1', '')}${url}`;
+  try {
+    const origin = new URL(apiUrl).origin;
+    return `${origin}${url}`;
+  } catch (e) {
+    return `http://localhost:5000${url}`;
+  }
 };
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -50,6 +55,7 @@ export default function InventoryPage() {
   // Drawers States
   const [isLocationDrawerOpen, setIsLocationDrawerOpen] = useState(false);
   const [isAdjustDrawerOpen, setIsAdjustDrawerOpen] = useState(false);
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Location Form State
@@ -264,15 +270,33 @@ export default function InventoryPage() {
               <img
                 src={imageUrl}
                 alt={product.name}
-                className="h-8 w-8 rounded-lg object-cover border border-border flex-shrink-0"
+                className="h-8 w-8 rounded-lg object-cover border border-border flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setIsDetailDrawerOpen(true);
+                }}
               />
             ) : (
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+              <div 
+                className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 cursor-pointer hover:bg-primary/20 transition-all"
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setIsDetailDrawerOpen(true);
+                }}
+              >
                 <Package className="h-4 w-4" />
               </div>
             )}
             <div>
-              <div className="font-bold text-sm text-foreground">{product.name}</div>
+              <button
+                className="font-bold text-sm text-foreground hover:underline hover:text-primary text-left bg-transparent border-none p-0 cursor-pointer outline-none block"
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setIsDetailDrawerOpen(true);
+                }}
+              >
+                {product.name}
+              </button>
               {product.brand && (
                 <div className="text-[10px] text-muted-foreground font-semibold">
                   Brand: {product.brand}
@@ -832,6 +856,126 @@ export default function InventoryPage() {
             />
           </div>
         </div>
+      </Drawer>
+
+      {/* Product Detail Drawer */}
+      <Drawer
+        isOpen={isDetailDrawerOpen}
+        onClose={() => setIsDetailDrawerOpen(false)}
+        title="Product Details"
+        footer={
+          <Button variant="outline" onClick={() => setIsDetailDrawerOpen(false)}>
+            Close
+          </Button>
+        }
+      >
+        {selectedProduct && (
+          <div className="space-y-8 pb-6 animate-in fade-in duration-300">
+            {/* Header info / Image */}
+            {selectedProduct.imageUrl && (
+              <div className="flex justify-center p-4 bg-muted/20 border border-border/60 rounded-2xl">
+                <img 
+                  src={getImageUrl(selectedProduct.imageUrl)} 
+                  alt={selectedProduct.name} 
+                  className="max-h-48 rounded-xl object-contain border bg-background"
+                />
+              </div>
+            )}
+
+            {/* Title & Brand & Status */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-md text-[10px] font-black uppercase tracking-[0.1em]">
+                  {selectedProduct.category?.name || 'Spare Parts'}
+                </span>
+                {(() => {
+                  const isOut = selectedProduct.stockQuantity === 0;
+                  const isLow = selectedProduct.stockQuantity <= selectedProduct.minimumStock;
+                  let statusText = "In Stock";
+                  let badgeColor = "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20";
+                  if (isOut) {
+                    statusText = "Out of Stock";
+                    badgeColor = "bg-red-500/10 text-red-500 border border-red-500/20 font-bold";
+                  } else if (isLow) {
+                    statusText = "Low Stock";
+                    badgeColor = "bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold";
+                  }
+                  return (
+                    <span className={`text-[10px] px-2.5 py-1 rounded uppercase font-black tracking-wider ${badgeColor}`}>
+                      {statusText}
+                    </span>
+                  );
+                })()}
+              </div>
+              <h3 className="text-xl font-bold text-foreground mt-1">{selectedProduct.name}</h3>
+              {selectedProduct.brand && (
+                <p className="text-sm text-muted-foreground font-semibold mt-0.5">
+                  Brand: {selectedProduct.brand}
+                </p>
+              )}
+            </div>
+
+            {/* Core Info Grid */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Product Code</p>
+                <p className="text-sm font-bold text-foreground uppercase">{selectedProduct.productCode}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Location</p>
+                <p className="text-sm font-bold text-foreground">
+                  {selectedProduct.shelf || selectedProduct.row 
+                    ? `${selectedProduct.shelf || '-'} / ${selectedProduct.row || '-'}` 
+                    : 'Not assigned'}
+                </p>
+              </div>
+            </div>
+
+            {/* Stock Levels Grid */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Current Stock</p>
+                <p className="text-base font-black text-foreground">
+                  {selectedProduct.stockQuantity} {selectedProduct.unit || 'pcs'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Reorder Alert Limit</p>
+                <p className="text-sm font-bold text-muted-foreground">
+                  {selectedProduct.minimumStock} {selectedProduct.unit || 'pcs'}
+                </p>
+              </div>
+            </div>
+
+            {/* Pricing Details */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+              {isAdmin && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Cost Price</p>
+                  <p className="text-sm font-bold text-muted-foreground">
+                    ₹{Number(selectedProduct.purchasePrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 font-bold">Selling Price</p>
+                <p className="text-base font-black text-green-600 dark:text-green-400">
+                  ₹{Number(selectedProduct.sellingPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            {selectedProduct.description && (
+              <div className="pt-4 border-t border-border space-y-1.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Specifications & Description</p>
+                <div className="bg-muted/30 rounded-xl p-4 border border-border/50 text-sm leading-relaxed text-muted-foreground font-medium">
+                  {selectedProduct.description}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Drawer>
     </div>
   );

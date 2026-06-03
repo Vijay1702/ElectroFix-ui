@@ -239,8 +239,14 @@ export default function InvoicesPage() {
 
   const handleFinalize = async () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.customerId) newErrors.customerId = "Customer is required";
-    if (formData.items.length === 0) newErrors.items = "At least one item is required";
+    if (!formData.customerId) {
+      newErrors.customerId = "Customer is required";
+      toast.error("Please select a billing customer");
+    }
+    if (formData.items.length === 0) {
+      newErrors.items = "At least one item is required";
+      toast.error("Please add at least one item to the invoice");
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -268,7 +274,7 @@ export default function InvoicesPage() {
         totalPrice: Number(item.totalPrice)
       }));
 
-      await invoiceService.createInvoice({
+      const newInvoice = await invoiceService.createInvoice({
         customerId: formData.customerId,
         repairJobId: formData.repairJobId || null,
         items: mappedItems,
@@ -285,6 +291,12 @@ export default function InvoicesPage() {
       setIsDrawerOpen(false);
       setIsQRModalOpen(false);
       fetchInvoices();
+      
+      // Automatically trigger receipt print dialog
+      if (newInvoice && newInvoice.id) {
+        handlePrintInvoice(newInvoice);
+      }
+
       setFormData({ customerId: "", repairJobId: "", items: [], paidAmount: 0, notes: "" });
       setPaymentType("FULL");
       setPaymentMethod("CASH");
