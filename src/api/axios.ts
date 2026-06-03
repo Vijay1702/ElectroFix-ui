@@ -14,6 +14,7 @@ const axiosInstance = axios.create({
 });
 
 let activeRequests = 0;
+let isRedirectingToLogin = false;
 
 // Add a request interceptor
 axiosInstance.interceptors.request.use(
@@ -60,11 +61,26 @@ axiosInstance.interceptors.response.use(
       NProgress.done();
     }
 
-    const message = error.response?.data?.message || error.message || "An unexpected error occurred.";
-    
-    // Don't show toast for 401s if you handle it elsewhere (like redirecting to login)
-    if (error.response?.status !== 401) {
-      toast.error(message);
+    const isLoginRequest = error.config?.url?.includes("/auth/login");
+
+    if (error.response?.status === 401 && !isLoginRequest) {
+      if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        toast.error("Session expired. Please log in again.");
+        setTimeout(() => {
+          isRedirectingToLogin = false;
+          window.location.href = "/login";
+        }, 1500);
+      }
+    } else {
+      const message = error.response?.data?.message || error.message || "An unexpected error occurred.";
+      
+      // Don't show toast for 401s on login requests to avoid double messaging
+      if (error.response?.status !== 401) {
+        toast.error(message);
+      }
     }
 
     return Promise.reject(error);
