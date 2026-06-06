@@ -2,8 +2,13 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const dashboardService = {
-  getSummary: async () => {
-    const response = await axiosInstance.get(API_ENDPOINTS.DASHBOARD.SUMMARY);
+  getSummary: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const url = params.toString() ? `${API_ENDPOINTS.DASHBOARD.SUMMARY}?${params.toString()}` : API_ENDPOINTS.DASHBOARD.SUMMARY;
+    const response = await axiosInstance.get(url);
     return response.data.data;
   },
 
