@@ -65,7 +65,7 @@ export default function InvoicesPage() {
       const jobId = location.state.highlightJobId;
       const targetInvoice = invoices.find(inv => inv.repairJobId === jobId);
       if (targetInvoice) {
-        handleViewInvoice(targetInvoice.id);
+        handlePrintInvoice(targetInvoice);
         navigate(location.pathname, { replace: true, state: {} });
       }
     }
