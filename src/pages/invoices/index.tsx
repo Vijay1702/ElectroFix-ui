@@ -532,7 +532,16 @@ export default function InvoicesPage() {
                 options={customers.map(c => ({ value: c.id, label: `${c.fullName} (${c.phoneNumber})` }))}
                 value={formData.customerId}
                 onChange={(val) => {
-                  setFormData({ ...formData, customerId: val });
+                  const currentRepair = repairs.find(r => r.id === formData.repairJobId);
+                  const newItems = currentRepair && currentRepair.customerId !== val
+                    ? formData.items.filter(item => !item.isRepair)
+                    : formData.items;
+                  setFormData({ 
+                    ...formData, 
+                    customerId: val,
+                    repairJobId: currentRepair && currentRepair.customerId === val ? formData.repairJobId : "",
+                    items: newItems
+                  });
                   if (errors.customerId) setErrors({ ...errors, customerId: "" });
                 }}
                 error={errors.customerId}
@@ -546,15 +555,17 @@ export default function InvoicesPage() {
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Linked Service Job</label>
                 <SearchableSelect
                   label="Select Completed Repair"
-                  options={repairs.map(r => {
-                    const brandModelStr = [r.brand, r.model].filter((val) => val && val !== 'null').join(' ');
-                    const deviceDetails = [r.deviceType, brandModelStr ? `(${brandModelStr})` : ''].filter(Boolean).join(' ');
-                    const labelParts = [r.jobNumber, deviceDetails, r.problemDescription].filter(Boolean);
-                    return {
-                      value: r.id,
-                      label: labelParts.join(' - ')
-                    };
-                  })}
+                  options={repairs
+                    .filter(r => !formData.customerId || r.customerId === formData.customerId)
+                    .map(r => {
+                      const brandModelStr = [r.brand, r.model].filter((val) => val && val !== 'null').join(' ');
+                      const deviceDetails = [r.deviceType, brandModelStr ? `(${brandModelStr})` : ''].filter(Boolean).join(' ');
+                      const labelParts = [r.jobNumber, deviceDetails, r.problemDescription].filter(Boolean);
+                      return {
+                        value: r.id,
+                        label: labelParts.join(' - ')
+                      };
+                    })}
                   value={formData.repairJobId}
                   onChange={handleSelectRepair}
                   required
