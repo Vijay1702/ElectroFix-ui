@@ -145,6 +145,12 @@ export default function RepairsPage() {
       newErrors.estimatedCost = "Estimated Cost is required and must be positive";
     }
 
+    if (formData.advanceAmount && (isNaN(Number(formData.advanceAmount)) || Number(formData.advanceAmount) < 0)) {
+      newErrors.advanceAmount = "Advance Paid must be positive";
+    } else if (Number(formData.advanceAmount || 0) >= Number(formData.estimatedCost || 0)) {
+      newErrors.advanceAmount = "Advance Paid must be less than Estimated Cost";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -658,7 +664,11 @@ export default function RepairsPage() {
                         type="number"
                         placeholder="e.g. 500"
                         value={formData.advanceAmount}
-                        onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, advanceAmount: e.target.value });
+                          if (errors.advanceAmount) setErrors({ ...errors, advanceAmount: "" });
+                        }}
+                        error={errors.advanceAmount}
                         disabled={!isAdmin}
                       />
                     </div>
