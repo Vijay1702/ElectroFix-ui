@@ -630,7 +630,7 @@ export default function RepairsPage() {
                     <SearchableSelect
                       label="Client Name"
                       required
-                      options={customersList.map(c => ({ value: c.id, label: c.fullName }))}
+                      options={customersList.map(c => ({ value: c.id, label: c.phoneNumber ? `${c.fullName} (${c.phoneNumber})` : c.fullName }))}
                       value={formData.customerId}
                       onChange={(val) => {
                         setFormData({ ...formData, customerId: val });
