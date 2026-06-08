@@ -61,16 +61,23 @@ export function DataTable<T extends { id?: string | number }>({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
 
-  // --- Client-side search ---
   const filteredData = useMemo(() => {
     if (!search.trim()) return data;
     const q = search.toLowerCase();
+
+    const deepSearch = (val: any): boolean => {
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'object') {
+        return Object.values(val).some(deepSearch);
+      }
+      return String(val).toLowerCase().includes(q);
+    };
+
     return data.filter((item) => {
-      const keysToSearch = searchKeys ?? (Object.keys(item as object) as (keyof T)[]);
-      return keysToSearch.some((key) => {
-        const val = item[key];
-        return val !== null && val !== undefined && String(val).toLowerCase().includes(q);
-      });
+      if (searchKeys) {
+        return searchKeys.some((key) => deepSearch(item[key]));
+      }
+      return deepSearch(item);
     });
   }, [data, search, searchKeys]);
 
