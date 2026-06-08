@@ -2,6 +2,7 @@ import axios from "axios";
 import NProgress from "nprogress";
 import { toast } from "sonner";
 import "nprogress/nprogress.css";
+import { useGlobalLoaderStore } from "@/stores/global-loader.store";
 
 // Configure NProgress
 NProgress.configure({ showSpinner: false, minimum: 0.1 });
@@ -14,7 +15,12 @@ const axiosInstance = axios.create({
 });
 
 let activeRequests = 0;
+let mutationRequests = 0;
 let isRedirectingToLogin = false;
+
+const isMutation = (method?: string) => {
+  return ["post", "put", "patch", "delete"].includes(method?.toLowerCase() || "");
+};
 
 // Add a request interceptor
 axiosInstance.interceptors.request.use(
@@ -23,6 +29,13 @@ axiosInstance.interceptors.request.use(
       NProgress.start();
     }
     activeRequests++;
+
+    if (isMutation(config.method)) {
+      if (mutationRequests === 0) {
+        useGlobalLoaderStore.getState().setIsLoading(true);
+      }
+      mutationRequests++;
+    }
 
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -35,6 +48,15 @@ axiosInstance.interceptors.request.use(
     if (activeRequests === 0) {
       NProgress.done();
     }
+    
+    if (isMutation(error.config?.method)) {
+      mutationRequests--;
+      if (mutationRequests <= 0) {
+        mutationRequests = 0;
+        useGlobalLoaderStore.getState().setIsLoading(false);
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -45,6 +67,14 @@ axiosInstance.interceptors.response.use(
     activeRequests--;
     if (activeRequests === 0) {
       NProgress.done();
+    }
+
+    if (isMutation(response.config?.method)) {
+      mutationRequests--;
+      if (mutationRequests <= 0) {
+        mutationRequests = 0;
+        useGlobalLoaderStore.getState().setIsLoading(false);
+      }
     }
 
     // Optional: show toast for specific successful mutations
@@ -59,6 +89,14 @@ axiosInstance.interceptors.response.use(
     activeRequests--;
     if (activeRequests === 0) {
       NProgress.done();
+    }
+
+    if (isMutation(error.config?.method)) {
+      mutationRequests--;
+      if (mutationRequests <= 0) {
+        mutationRequests = 0;
+        useGlobalLoaderStore.getState().setIsLoading(false);
+      }
     }
 
     const isLoginRequest = error.config?.url?.includes("/auth/login");
