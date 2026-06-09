@@ -5,7 +5,7 @@ import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
 import { repairService } from "@/services/repair.service";
 import { 
-  Plus, Search, Eye, Printer, Download,
+  Plus, Search, Eye, Printer,
   Smartphone, Globe, 
   Receipt, X, Zap, Tag
 } from "lucide-react";
@@ -106,25 +106,7 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDownloadInvoice = async (invoice: any) => {
-    setIsDownloading(invoice.id);
-    try {
-      const blob = await invoiceService.generatePDF(invoice.id);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Invoice-${invoice.invoiceNumber}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success("Invoice downloaded successfully");
-    } catch (error) {
-      console.error("Failed to download invoice", error);
-      toast.error("Failed to download invoice");
-    } finally {
-      setIsDownloading(null);
-    }
-  };
+
 
   const handleAddItem = (product: any) => {
     const existingItem = formData.items.find(item => item.productId === product.id);
