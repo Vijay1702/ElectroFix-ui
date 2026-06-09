@@ -20,11 +20,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import qrScanner from "@/assets/QR_Scanner.png";
+import { useGlobalLoaderStore } from "@/stores/global-loader.store";
 
 export default function InvoicesPage() {
   useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setIsLoading } = useGlobalLoaderStore();
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -305,8 +307,9 @@ export default function InvoicesPage() {
 
   const handlePrintInvoice = async (inv: any) => {
     setIsDownloading(inv.id);
+    setIsLoading(true);
     try {
-      const response = await invoiceService.generatePDF(inv.id);
+      const response = await invoiceService.generatePDFDirect(inv);
       const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' });
       
       if (blob.size < 1000) {
@@ -352,6 +355,7 @@ export default function InvoicesPage() {
       toast.error("Failed to prepare PDF. System might be busy.");
     } finally {
       setIsDownloading(null);
+      setIsLoading(false);
     }
   };
 

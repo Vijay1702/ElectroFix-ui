@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     CREATE: "/invoices",
     GET_BY_ID: "/invoices",
     GENERATE_PDF: "/invoices/:id/pdf",
+    GENERATE_PDF_DIRECT: "/invoices/pdf/direct",
   },
 
   PAYMENTS: {
