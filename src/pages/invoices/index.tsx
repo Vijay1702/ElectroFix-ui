@@ -1009,7 +1009,7 @@ export default function InvoicesPage() {
                 </Button>
                 <Button 
                    variant="primary" 
-                   onClick={() => handleDownloadInvoice(selectedInvoiceForView)}
+                   onClick={() => handlePrintInvoice(selectedInvoiceForView)}
                    disabled={isDownloading === selectedInvoiceForView.id}
                    className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
                 >
@@ -1017,7 +1017,7 @@ export default function InvoicesPage() {
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                    ) : (
                       <>
-                        <Download className="h-4 w-4" /> Download PDF
+                        <Printer className="h-4 w-4" /> Print
                       </>
                    )}
                 </Button>
