@@ -9,8 +9,13 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PaymentsPage() {
+  const { user } = useAuth();
+  const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isMonitor = userRole === "MONITOR";
+
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -178,7 +183,7 @@ export default function PaymentsPage() {
         searchable
         searchPlaceholder="Search by invoice or reference..."
         paginated
-        onAddClick={handleOpenRecordPayment}
+        onAddClick={isMonitor ? undefined : handleOpenRecordPayment}
         addLabel="Record Payment"
         toolbarExtra={
           <DateRangePicker

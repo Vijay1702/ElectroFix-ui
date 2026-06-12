@@ -76,6 +76,8 @@ export const API_ENDPOINTS = {
     TECHNICIAN_WORKLOAD: "/dashboard/technician-workload",
     WEEKLY_PERFORMANCE: "/dashboard/weekly-performance",
     TOP_PRODUCTS: "/dashboard/top-products",
+    TOP_DEVICES: "/dashboard/top-devices",
+    TOP_CUSTOMERS: "/dashboard/top-customers",
   },
 
   REPORTS: {

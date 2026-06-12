@@ -7,11 +7,17 @@ import { TextArea } from "@/components/shared/TextArea";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Modal } from "@/components/shared/Modal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DateRangePicker } from "@/components/shared/DateRangePicker";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 export default function CustomersPage() {
+  const { user } = useAuth();
+  const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isMonitor = userRole === "MONITOR";
+  
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -151,7 +157,7 @@ export default function CustomersPage() {
     }
   };
 
-  const columns: Column<any>[] = [
+  let columns: Column<any>[] = [
     {
       header: "Customer ID",
       accessor: "customerCode",
@@ -211,6 +217,10 @@ export default function CustomersPage() {
     }
   ];
 
+  if (isMonitor) {
+    columns = columns.filter(c => c.header !== "Actions");
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
       <div className="hidden md:block">
@@ -225,7 +235,7 @@ export default function CustomersPage() {
           searchable
           searchPlaceholder="Search by name, phone, address..."
           paginated
-          onAddClick={() => handleOpenForm()}
+          onAddClick={isMonitor ? undefined : () => handleOpenForm()}
           addLabel="Add Customer"
           toolbarExtra={
             <DateRangePicker

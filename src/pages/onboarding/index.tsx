@@ -11,8 +11,13 @@ import { Drawer } from "@/components/shared/Drawer";
 import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function OnboardingPage() {
+  const { user } = useAuth();
+  const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isMonitor = userRole === "MONITOR";
+  
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -168,7 +173,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const columns: Column<any>[] = [
+  let columns: Column<any>[] = [
     {
       header: "Employee ID",
       render: (u) => (
@@ -249,7 +254,7 @@ export default function OnboardingPage() {
         <div className="flex items-center justify-end gap-4">
           <button 
             onClick={() => handleEditClick(u)} 
-            disabled={u.operationalStatus === "Inactive"} 
+            disabled={u.operationalStatus === "Inactive" || isMonitor} 
             className="text-indigo-500 hover:text-indigo-600 transition-colors disabled:opacity-30 bg-transparent outline-none"
           >
             <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
@@ -265,6 +270,10 @@ export default function OnboardingPage() {
       )
     }
   ];
+
+  if (isMonitor) {
+    columns = columns.filter(c => c.header !== "Actions");
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
@@ -306,7 +315,7 @@ export default function OnboardingPage() {
         searchable
         searchPlaceholder="Search personnel..."
         paginated
-        onAddClick={() => {
+        onAddClick={isMonitor ? undefined : () => {
           setErrors({});
           setEditingUserId(null);
           setFormData({ fullName: '', email: '', phoneNumber: '', password: '', role: 'TECHNICIAN', perDaySalary: '0' });

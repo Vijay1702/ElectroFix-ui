@@ -24,6 +24,7 @@ export default function RepairsPage() {
   const { user } = useAuth();
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
   const isAdmin = userRole === "ADMIN";
+  const isMonitor = userRole === "MONITOR";
   
   const [repairs, setRepairs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +299,7 @@ export default function RepairsPage() {
     );
   };
 
-  const columns: Column<any>[] = [
+  let columns: Column<any>[] = [
     {
       header: "Job No.",
       accessor: "jobNumber",
@@ -422,6 +423,10 @@ export default function RepairsPage() {
     }
   ];
 
+  if (isMonitor) {
+    columns = columns.filter(c => c.header !== "Actions");
+  }
+
   return (<>
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
 
@@ -437,7 +442,7 @@ export default function RepairsPage() {
           searchable
           searchPlaceholder="Search job number, device, or customer..."
           paginated
-          onAddClick={isAdmin ? () => handleOpenDrawer(null, false) : undefined}
+          onAddClick={!isMonitor && isAdmin ? () => handleOpenDrawer(null, false) : undefined}
           addLabel="New Repair Job"
           toolbarExtra={
             <div className="flex items-center gap-2">

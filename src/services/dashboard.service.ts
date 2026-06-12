@@ -61,4 +61,22 @@ export const dashboardService = {
     const response = await axiosInstance.get(`${API_ENDPOINTS.DASHBOARD.TOP_PRODUCTS}?${params.toString()}`);
     return response.data.data;
   },
+
+  getTopDevices: async (limit = 5, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await axiosInstance.get(`${API_ENDPOINTS.DASHBOARD.TOP_DEVICES}?${params.toString()}`);
+    return response.data.data;
+  },
+
+  getTopCustomers: async (limit = 5, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await axiosInstance.get(`${API_ENDPOINTS.DASHBOARD.TOP_CUSTOMERS}?${params.toString()}`);
+    return response.data.data;
+  },
 };

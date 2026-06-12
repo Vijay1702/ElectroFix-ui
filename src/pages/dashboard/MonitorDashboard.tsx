@@ -19,6 +19,8 @@ export function MonitorDashboard() {
   const [technicianWorkload, setTechnicianWorkload] = useState<any[]>([]);
   const [weeklyPerformance, setWeeklyPerformance] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [topDevices, setTopDevices] = useState<any[]>([]);
+  const [topCustomers, setTopCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const formatLocalDate = (d: Date) => {
@@ -35,14 +37,16 @@ export function MonitorDashboard() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const [sumRes, repRes, salesRes, lowStockRes, techRes, weeklyRes, topProdRes] = await Promise.all([
+      const [sumRes, repRes, salesRes, lowStockRes, techRes, weeklyRes, topProdRes, topDevRes, topCustRes] = await Promise.all([
         dashboardService.getSummary(startDate, endDate),
         dashboardService.getRecentRepairs(4, startDate, endDate),
         dashboardService.getRecentSales(4, startDate, endDate),
         dashboardService.getLowStock(5),
         dashboardService.getTechnicianWorkload(startDate, endDate),
         dashboardService.getWeeklyPerformance(startDate, endDate),
-        dashboardService.getTopProducts(5, startDate, endDate)
+        dashboardService.getTopProducts(5, startDate, endDate),
+        dashboardService.getTopDevices(5, startDate, endDate),
+        dashboardService.getTopCustomers(5, startDate, endDate)
       ]);
       setSummary(sumRes);
       setRecentRepairs(repRes || []);
@@ -51,6 +55,8 @@ export function MonitorDashboard() {
       setTechnicianWorkload(techRes || []);
       setWeeklyPerformance(weeklyRes || []);
       setTopProducts(topProdRes || []);
+      setTopDevices(topDevRes || []);
+      setTopCustomers(topCustRes || []);
     } catch (error) {
       console.error("Dashboard synchronization failure", error);
     } finally {
@@ -83,7 +89,6 @@ export function MonitorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] dark:from-[#020617] dark:to-[#0f172a] p-4 lg:p-6 lg:px-6 space-y-6 animate-in fade-in duration-700">
-      
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/40">
         <div className="space-y-2">
@@ -99,7 +104,7 @@ export function MonitorDashboard() {
         </div>
         <div className="flex flex-col items-end gap-4">
           <div className="relative group z-10">
-            <DateRangePicker 
+            <DateRangePicker
               startDate={startDate}
               endDate={endDate}
               onRangeChange={(start, end) => {
@@ -109,7 +114,9 @@ export function MonitorDashboard() {
             />
           </div>
           <div className="text-right">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Feed Active</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Live Feed Active
+            </p>
           </div>
         </div>
       </div>
@@ -117,15 +124,48 @@ export function MonitorDashboard() {
       {/* Main Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Gross Revenue", value: `₹${Number(summary?.periodGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-          { label: "Active Jobs", value: summary?.activeRepairs || 0, icon: Wrench, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Items Low on Stock", value: summary?.lowStockCount || 0, icon: Package, color: summary?.lowStockCount > 0 ? "text-red-500" : "text-slate-500", bg: summary?.lowStockCount > 0 ? "bg-red-500/10" : "bg-slate-500/10" },
-          { label: "Customers Served", value: summary?.totalCustomers || 0, icon: Activity, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+          {
+            label: "Gross Revenue",
+            value: `₹${Number(summary?.periodGross || 0).toLocaleString("en-IN")}`,
+            icon: DollarSign,
+            color: "text-emerald-500",
+            bg: "bg-emerald-500/10",
+          },
+          {
+            label: "Active Jobs",
+            value: summary?.activeRepairs || 0,
+            icon: Wrench,
+            color: "text-blue-500",
+            bg: "bg-blue-500/10",
+          },
+          {
+            label: "Items Low on Stock",
+            value: summary?.lowStockCount || 0,
+            icon: Package,
+            color:
+              summary?.lowStockCount > 0 ? "text-red-500" : "text-slate-500",
+            bg:
+              summary?.lowStockCount > 0 ? "bg-red-500/10" : "bg-slate-500/10",
+          },
+          {
+            label: "Customers Served",
+            value: summary?.totalCustomers || 0,
+            icon: Activity,
+            color: "text-indigo-500",
+            bg: "bg-indigo-500/10",
+          },
         ].map((stat, i) => (
-          <div key={i} className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+          <div
+            key={i}
+            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex items-center justify-between"
+          >
             <div>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-black text-foreground">{stat.value}</h3>
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                {stat.label}
+              </p>
+              <h3 className="text-3xl font-black text-foreground">
+                {stat.value}
+              </h3>
             </div>
             <div className={`p-4 rounded-xl ${stat.bg} ${stat.color}`}>
               <stat.icon className="w-6 h-6" />
@@ -136,23 +176,51 @@ export function MonitorDashboard() {
 
       {/* Analytics Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Weekly Revenue Bar Chart */}
         <div className="lg:col-span-2 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm h-[350px] flex flex-col">
           <h3 className="text-sm font-black tracking-widest uppercase mb-6 flex items-center gap-2">
-             Operations Performance (Revenue)
+            Operations Performance (Revenue)
           </h3>
           <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyPerformance} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/40" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'currentColor' }} className="text-muted-foreground" />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'currentColor' }} className="text-muted-foreground" />
-                <Tooltip 
-                  cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'var(--card)' }}
+              <BarChart
+                data={weeklyPerformance}
+                margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="currentColor"
+                  className="text-border/40"
                 />
-                <Bar dataKey="revenue" fill="currentColor" className="fill-primary" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "currentColor" }}
+                  className="text-muted-foreground"
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "currentColor" }}
+                  className="text-muted-foreground"
+                />
+                <Tooltip
+                  cursor={{ fill: "currentColor", opacity: 0.05 }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    backgroundColor: "var(--card)",
+                  }}
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="currentColor"
+                  className="fill-primary"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -160,7 +228,9 @@ export function MonitorDashboard() {
 
         {/* Repair Status Distribution Pie Chart */}
         <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm h-[350px] flex flex-col">
-          <h3 className="text-sm font-black tracking-widest uppercase mb-2">Repair Pipeline</h3>
+          <h3 className="text-sm font-black tracking-widest uppercase mb-2">
+            Repair Pipeline
+          </h3>
           <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -176,36 +246,279 @@ export function MonitorDashboard() {
                     stroke="none"
                   >
                     {repairStatusData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            
+
             {/* Custom Legend */}
             <div className="w-full space-y-2 mt-4">
               {repairStatusData.map((item, idx) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between text-xs"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}></span>
-                    <span className="font-semibold text-muted-foreground">{item.name}</span>
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{
+                        backgroundColor: PIE_COLORS[idx % PIE_COLORS.length],
+                      }}
+                    ></span>
+                    <span className="font-semibold text-muted-foreground">
+                      {item.name}
+                    </span>
                   </div>
-                  <span className="font-black text-foreground">{item.value}</span>
+                  <span className="font-black text-foreground">
+                    {item.value}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+      </div>
+      {/* Revenue Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top Products */}
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-emerald-500 mb-2 shrink-0">
+            <DollarSign className="h-4 w-4" /> Top Products
+          </h3>
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+            {topProducts.length === 0 ? (
+              <p className="text-xs font-bold text-muted-foreground">No data</p>
+            ) : (
+              <>
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={topProducts}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="totalRevenue"
+                        nameKey="name"
+                        stroke="none"
+                      >
+                        {topProducts.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={PIE_COLORS[index % PIE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `₹${value.toLocaleString("en-IN")}`
+                        }
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full space-y-2 mt-4 overflow-y-auto pr-1">
+                  {topProducts.map((item, idx) => (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate pr-2">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              PIE_COLORS[idx % PIE_COLORS.length],
+                          }}
+                        ></span>
+                        <span
+                          className="font-semibold text-muted-foreground truncate"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="font-black text-foreground shrink-0">
+                        ₹{Number(item.totalRevenue).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
+        {/* Top Repair Devices */}
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-blue-500 mb-2 shrink-0">
+            <Wrench className="h-4 w-4" /> Top Repair Devices
+          </h3>
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+            {topDevices.length === 0 ? (
+              <p className="text-xs font-bold text-muted-foreground">No data</p>
+            ) : (
+              <>
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={topDevices}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="totalRevenue"
+                        nameKey="name"
+                        stroke="none"
+                      >
+                        {topDevices.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={PIE_COLORS[(index + 1) % PIE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `₹${value.toLocaleString("en-IN")}`
+                        }
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full space-y-2 mt-4 overflow-y-auto pr-1">
+                  {topDevices.map((item, idx) => (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate pr-2">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              PIE_COLORS[(idx + 1) % PIE_COLORS.length],
+                          }}
+                        ></span>
+                        <span
+                          className="font-semibold text-muted-foreground truncate"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="font-black text-foreground shrink-0">
+                        ₹{Number(item.totalRevenue).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Top Customers */}
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-purple-500 mb-2 shrink-0">
+            <Users className="h-4 w-4" /> Top Customers
+          </h3>
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+            {topCustomers.length === 0 ? (
+              <p className="text-xs font-bold text-muted-foreground">No data</p>
+            ) : (
+              <>
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={topCustomers}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="totalRevenue"
+                        nameKey="name"
+                        stroke="none"
+                      >
+                        {topCustomers.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `₹${value.toLocaleString("en-IN")}`
+                        }
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full space-y-2 mt-4 overflow-y-auto pr-1">
+                  {topCustomers.map((item, idx) => (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate pr-2">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              PIE_COLORS[(idx + 2) % PIE_COLORS.length],
+                          }}
+                        ></span>
+                        <span
+                          className="font-semibold text-muted-foreground truncate"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="font-black text-foreground shrink-0">
+                        ₹{Number(item.totalRevenue).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Middle Row - Tech Workload & Low Stock */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Technician Workload */}
         <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
           <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-indigo-500 mb-6 shrink-0">
@@ -214,16 +527,21 @@ export function MonitorDashboard() {
           <div className="space-y-4 flex-1 overflow-y-auto pr-2">
             {technicianWorkload.map((tech) => {
               const activeCount = tech._count?.repairJobs || 0;
-              const percentage = Math.min(100, Math.max(5, (activeCount / totalActiveRepairs) * 100));
-              
+              const percentage = Math.min(
+                100,
+                Math.max(5, (activeCount / totalActiveRepairs) * 100),
+              );
+
               return (
                 <div key={tech.id} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold">
                     <span className="text-foreground">{tech.fullName}</span>
-                    <span className="text-muted-foreground">{activeCount} Jobs</span>
+                    <span className="text-muted-foreground">
+                      {activeCount} Jobs
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
                       style={{ width: `${percentage}%` }}
                     />
@@ -232,7 +550,9 @@ export function MonitorDashboard() {
               );
             })}
             {technicianWorkload.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">No active technicians.</p>
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No active technicians.
+              </p>
             )}
           </div>
         </div>
@@ -246,14 +566,23 @@ export function MonitorDashboard() {
             {lowStockItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <CheckCircle className="h-8 w-8 text-emerald-500 mb-2 opacity-50" />
-                <p className="text-xs font-bold text-muted-foreground">Inventory levels are optimal.</p>
+                <p className="text-xs font-bold text-muted-foreground">
+                  Inventory levels are optimal.
+                </p>
               </div>
             ) : (
               lowStockItems.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-red-500/20 bg-red-500/5"
+                >
                   <div>
-                    <p className="text-xs font-bold text-foreground truncate max-w-[150px]">{item.name}</p>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">{item.productCode || "No SKU"}</p>
+                    <p className="text-xs font-bold text-foreground truncate max-w-[150px]">
+                      {item.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">
+                      {item.productCode || "No SKU"}
+                    </p>
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-[10px] font-black px-2 py-1 rounded bg-red-500/20 text-red-600 dark:text-red-400">
@@ -265,41 +594,10 @@ export function MonitorDashboard() {
             )}
           </div>
         </div>
-
-        {/* Top Products */}
-        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
-          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-emerald-500 mb-6 shrink-0">
-            <DollarSign className="h-4 w-4" /> Top Products (Revenue)
-          </h3>
-          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
-            {topProducts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <Package className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                <p className="text-xs font-bold text-muted-foreground">No product sales in this period.</p>
-              </div>
-            ) : (
-              topProducts.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors">
-                  <div>
-                    <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{item.name}</p>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">{item.category || "General"}</p>
-                  </div>
-                  <div className="text-right shrink-0 flex flex-col items-end">
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                      ₹{item.totalRevenue.toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-bold">{item.totalQuantity} sold</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Bottom Row - Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
         {/* Recent Jobs Read-Only List */}
         <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl overflow-hidden shadow-sm flex flex-col">
           <div className="p-5 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-background to-transparent">
@@ -312,18 +610,33 @@ export function MonitorDashboard() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/40">
-                  <TableHead className="text-xs uppercase tracking-wider font-bold">Job No.</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider font-bold">Device</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">Status</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-bold">
+                    Job No.
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-bold">
+                    Device
+                  </TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">
+                    Status
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentRepairs.map((job) => (
-                  <TableRow key={job.id} className="cursor-default hover:bg-muted/30 transition-colors border-border/20">
-                    <TableCell className="font-bold text-primary">{job.jobNumber}</TableCell>
+                  <TableRow
+                    key={job.id}
+                    className="cursor-default hover:bg-muted/30 transition-colors border-border/20"
+                  >
+                    <TableCell className="font-bold text-primary">
+                      {job.jobNumber}
+                    </TableCell>
                     <TableCell>
-                      <div className="text-sm font-bold text-foreground truncate max-w-[150px]">{job.deviceType}</div>
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate max-w-[150px]">{job.brand}</div>
+                      <div className="text-sm font-bold text-foreground truncate max-w-[150px]">
+                        {job.deviceType}
+                      </div>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate max-w-[150px]">
+                        {job.brand}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <StatusBadge status={job.status} />
@@ -340,27 +653,44 @@ export function MonitorDashboard() {
           <div className="p-5 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-background to-transparent">
             <div className="flex items-center gap-2">
               <Receipt className="h-5 w-5 text-emerald-500" />
-              <h2 className="text-lg font-black tracking-tight">Recent Sales</h2>
+              <h2 className="text-lg font-black tracking-tight">
+                Recent Sales
+              </h2>
             </div>
           </div>
           <div className="overflow-x-auto p-2">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/40">
-                  <TableHead className="text-xs uppercase tracking-wider font-bold">Inv No.</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider font-bold">Client</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">Amount</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-bold">
+                    Inv No.
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-bold">
+                    Client
+                  </TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">
+                    Amount
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentSales.map((sale) => (
-                  <TableRow key={sale.id} className="cursor-default hover:bg-muted/30 transition-colors border-border/20">
-                    <TableCell className="font-bold text-emerald-500">{sale.invoiceNumber}</TableCell>
+                  <TableRow
+                    key={sale.id}
+                    className="cursor-default hover:bg-muted/30 transition-colors border-border/20"
+                  >
+                    <TableCell className="font-bold text-emerald-500">
+                      {sale.invoiceNumber}
+                    </TableCell>
                     <TableCell>
-                      <div className="text-sm font-bold text-foreground truncate max-w-[150px]">{sale.customer?.fullName || 'Walk-in'}</div>
+                      <div className="text-sm font-bold text-foreground truncate max-w-[150px]">
+                        {sale.customer?.fullName || "Walk-in"}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="font-bold text-foreground">₹{Number(sale.grandTotal).toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-foreground">
+                        ₹{Number(sale.grandTotal).toLocaleString("en-IN")}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -368,9 +698,7 @@ export function MonitorDashboard() {
             </Table>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }

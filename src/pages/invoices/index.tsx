@@ -24,7 +24,9 @@ import qrScanner from "@/assets/QR_Scanner.png";
 import { useGlobalLoaderStore } from "@/stores/global-loader.store";
 
 export default function InvoicesPage() {
-  useAuth();
+  const { user } = useAuth();
+  const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isMonitor = userRole === "MONITOR";
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsLoading } = useGlobalLoaderStore();
@@ -460,7 +462,7 @@ export default function InvoicesPage() {
         searchable
         searchPlaceholder="Search invoices..."
         paginated
-        onAddClick={() => setIsDrawerOpen(true)}
+        onAddClick={isMonitor ? undefined : () => setIsDrawerOpen(true)}
         addLabel="Generate Invoice"
         toolbarExtra={
           <DateRangePicker
