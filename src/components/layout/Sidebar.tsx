@@ -9,6 +9,7 @@ import {
   UserPlus,
   LogOut,
   Calendar,
+  ClipboardList,
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN"] },
     { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
+    { label: "Audit Logs", icon: ClipboardList, path: "/audit", roles: ["MONITOR"] },
   ];
 
   const filteredItems = menuItems.filter(item => 
