@@ -132,7 +132,7 @@ export function DataTable<T extends { id?: string | number }>({
         </div>
 
         {/* Right controls: search + add */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {searchable && (
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
@@ -141,7 +141,7 @@ export function DataTable<T extends { id?: string | number }>({
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="h-9 pl-8 pr-3 rounded-xl border border-border/60 bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all w-52 placeholder:text-muted-foreground"
+                className="h-9 pl-8 pr-2 rounded-xl border border-border/60 bg-background text-xs outline-none focus:ring-2 focus:ring-primary/20 transition-all w-40 sm:w-48 placeholder:text-muted-foreground"
               />
             </div>
           )}
@@ -151,7 +151,7 @@ export function DataTable<T extends { id?: string | number }>({
           {onAddClick && (
             <button
               onClick={onAddClick}
-              className="h-9 px-4 flex items-center gap-1.5 rounded-xl border border-primary/60 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground text-sm font-semibold transition-all"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-xl border border-primary/60 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground text-xs font-semibold transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
               {addLabel}

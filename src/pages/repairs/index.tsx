@@ -445,7 +445,7 @@ export default function RepairsPage() {
           onAddClick={!isMonitor && isAdmin ? () => handleOpenDrawer(null, false) : undefined}
           addLabel="New Repair Job"
           toolbarExtra={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <DateRangePicker
                 startDate={startDate}
                 endDate={endDate}
@@ -455,7 +455,7 @@ export default function RepairsPage() {
                 }}
               />
               <select
-                className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                className="h-9 px-2 rounded-xl border border-border/60 bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >

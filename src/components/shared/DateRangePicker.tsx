@@ -65,18 +65,18 @@ export function DateRangePicker({ startDate, endDate, onRangeChange, disabled }:
     <div className="relative inline-block text-left w-full sm:w-auto">
       <div 
         className={cn(
-          "relative flex items-center justify-between bg-card border border-border/50 rounded-xl p-2 px-3 cursor-pointer hover:border-primary/50 transition-colors",
+          "relative flex items-center justify-between bg-card border border-border/50 rounded-xl h-9 px-2 cursor-pointer hover:border-primary/50 transition-colors",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
-        <div className="flex items-center gap-2 mr-4">
-          <Calendar className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-foreground">
+        <div className="flex items-center gap-1.5 mr-2">
+          <Calendar className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-bold text-foreground">
             {startDisplay} - {endDisplay}
           </span>
         </div>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
 
       {isOpen && (
