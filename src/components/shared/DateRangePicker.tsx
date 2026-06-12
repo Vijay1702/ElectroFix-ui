@@ -39,7 +39,14 @@ export function DateRangePicker({ startDate, endDate, onRangeChange, disabled }:
       end.setHours(23, 59, 59, 999);
     }
 
-    onRangeChange(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
+    const formatLocalDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    onRangeChange(formatLocalDate(start), formatLocalDate(end));
     setIsOpen(false);
   };
 

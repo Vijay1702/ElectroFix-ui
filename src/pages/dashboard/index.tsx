@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { dashboardService } from "@/services/dashboard.service";
+import { MonitorDashboard } from "./MonitorDashboard";
 import { notificationService } from "@/services/notification.service";
 import { toast } from "sonner";
 import { 
@@ -26,20 +27,28 @@ export default function DashboardPage() {
   const [technicianWorkload, setTechnicianWorkload] = useState<any[]>([]);
   const [lowStockItems, setLowStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const now = new Date();
-  const [startDate, setStartDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(now.toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       if (!user) return;
       try {
+        setLoading(true);
         setRefreshing(true);
         const [sumRes, repRes, techRes, lowStockRes] = await Promise.all([
           dashboardService.getSummary(startDate, endDate),
-          dashboardService.getRecentRepairs(),
-          dashboardService.getTechnicianWorkload(),
+          dashboardService.getRecentRepairs(5, startDate, endDate),
+          dashboardService.getTechnicianWorkload(startDate, endDate),
           dashboardService.getLowStock(5)
         ]);
         setSummary(sumRes);
@@ -81,7 +90,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[90vh] items-center justify-center bg-background/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Synchronizing Terminal</p>
@@ -90,7 +99,9 @@ export default function DashboardPage() {
     );
   }
 
-
+  if (userRole === "MONITOR") {
+    return <MonitorDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] dark:from-[#020617] dark:to-[#0f172a] p-4 lg:p-6 lg:px-6 space-y-6 animate-in fade-in duration-700">
@@ -109,7 +120,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Period Filter Dropdown */}
-        {isAdmin && (
+        {(isAdmin || userRole === "MONITOR") && (
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-indigo-500 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
             <DateRangePicker 
@@ -131,7 +142,7 @@ export default function DashboardPage() {
           { label: "Active Repairs", value: summary?.activeRepairs, detail: "Active & not started", icon: Wrench, classes: { glow: "bg-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-500", badgeText: "text-blue-600 dark:text-blue-400" } },
           { label: "Pending to Deliver", value: summary?.pendingToDeliverRepairs, detail: "Awaiting delivery", icon: Activity, classes: { glow: "bg-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-500", badgeText: "text-amber-600 dark:text-amber-400" } },
           { label: "Throughput", value: summary?.completedToday, detail: "Completed today", icon: CheckCircle, classes: { glow: "bg-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-500", badgeText: "text-emerald-600 dark:text-emerald-400" } },
-          ...(isAdmin ? [{ label: `Net Revenue`, value: `₹${Number(summary?.periodRevenue || 0).toLocaleString('en-IN')}`, detail: `Gross: ₹${Number(summary?.periodGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }] : [{ label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }])
+          ...((isAdmin || userRole === "MONITOR") ? [{ label: `Net Revenue`, value: `₹${Number(summary?.periodRevenue || 0).toLocaleString('en-IN')}`, detail: `Gross: ₹${Number(summary?.periodGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }] : [{ label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }])
         ].map((stat, i) => (
           <div key={i} className="relative group overflow-hidden rounded-2xl">
             <div className="relative bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-4 lg:p-5 shadow-xl hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-1 h-full">
@@ -247,7 +258,7 @@ export default function DashboardPage() {
               { label: "Client Records", sub: "CRM & History", icon: Users, path: "/customers", classes: { gradient: "from-indigo-500 to-transparent", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500" }, adminOnly: true },
               { label: "Financial Registry", sub: "Invoices & Billing", icon: CreditCard, path: "/invoices", classes: { gradient: "from-emerald-500 to-transparent", bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-500" }, adminOnly: true },
               { label: "Job Archives", sub: "Historical Records", icon: FileText, path: "/repairs", classes: { gradient: "from-slate-500 to-transparent", bg: "bg-slate-500/10", border: "border-slate-500/20", text: "text-slate-500" }, adminOnly: false }
-            ].filter(item => !item.adminOnly || isAdmin).map((action, i) => (
+            ].filter(item => !item.adminOnly || isAdmin || userRole === "MONITOR").map((action, i) => (
               <button 
                 key={i} 
                 onClick={() => navigate(action.path)}
