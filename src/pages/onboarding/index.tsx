@@ -8,6 +8,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,17 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -30,12 +42,12 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await userService.getUsers(1, 1000, '');
+      const res = await userService.getUsers(1, 1000, '', '', startDate, endDate);
       setUsers((res.data || []).filter((u: any) => u.isActive !== false));
     } catch (error) {
       console.error("Failed to fetch users", error);
@@ -301,6 +313,16 @@ export default function OnboardingPage() {
           setIsDrawerOpen(true);
         }}
         addLabel="Onboard Personnel"
+        toolbarExtra={
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        }
       />
 
       <Drawer

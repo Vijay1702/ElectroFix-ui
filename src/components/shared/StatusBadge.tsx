@@ -51,6 +51,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     "completed": { 
       label: "Completed", 
       classes: "bg-green-50 text-green-700 border-green-200" 
+    },
+    "declined": { 
+      label: "Declined", 
+      classes: "bg-red-50 text-red-700 border-red-200" 
     }
   };
 

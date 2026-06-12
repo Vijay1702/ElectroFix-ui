@@ -28,14 +28,14 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
 
   const menuItems = [
-    { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["ADMIN", "TECHNICIAN"] },
+    { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Onboarding", icon: UserPlus, path: "/onboarding", roles: ["ADMIN"] },
     { label: "Attendance", icon: Calendar, path: "/attendance", roles: ["ADMIN", "TECHNICIAN"] },
-    { label: "Customers", icon: Users, path: "/customers", roles: ["ADMIN", "TECHNICIAN"] },
-    { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN"] },
+    { label: "Customers", icon: Users, path: "/customers", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
+    { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN"] },
-    { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN"] },
-    { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN"] },
+    { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
+    { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
   ];
 
   const filteredItems = menuItems.filter(item => 

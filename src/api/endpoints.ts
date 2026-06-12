@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     CREATE: "/invoices",
     GET_BY_ID: "/invoices",
     GENERATE_PDF: "/invoices/:id/pdf",
+    GENERATE_PDF_DIRECT: "/invoices/pdf/direct",
   },
 
   PAYMENTS: {
@@ -73,6 +74,8 @@ export const API_ENDPOINTS = {
     RECENT_SALES: "/dashboard/recent-sales",
     LOW_STOCK: "/dashboard/low-stock",
     TECHNICIAN_WORKLOAD: "/dashboard/technician-workload",
+    WEEKLY_PERFORMANCE: "/dashboard/weekly-performance",
+    TOP_PRODUCTS: "/dashboard/top-products",
   },
 
   REPORTS: {

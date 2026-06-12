@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
-import { Calendar, Smartphone, CheckCircle2, Edit3, Trash } from "lucide-react";
+import { Calendar, Smartphone, CheckCircle2, Edit3, Trash, Phone, Clock } from "lucide-react";
 
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -14,6 +14,8 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Modal } from "@/components/shared/Modal";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -27,6 +29,17 @@ export default function RepairsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Dropdown States
   const [customersList, setCustomersList] = useState<any[]>([]);
@@ -53,9 +66,18 @@ export default function RepairsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Call Log States
+  const [isCallLogModalOpen, setIsCallLogModalOpen] = useState(false);
+  const [selectedRepairForCall, setSelectedRepairForCall] = useState<any>(null);
+  const [callOutcome, setCallOutcome] = useState("informed_fault");
+  const [callNotes, setCallNotes] = useState("");
+  const [callLogs, setCallLogs] = useState<any[]>([]);
+  const [loadingCallLogs, setLoadingCallLogs] = useState(false);
+  const [isLoggingCall, setIsLoggingCall] = useState(false);
+
   useEffect(() => {
     fetchRepairs();
-  }, [statusFilter]);
+  }, [statusFilter, startDate, endDate]);
 
   useEffect(() => {
     // Only admins need to fetch the full lists for dropdowns
@@ -85,7 +107,7 @@ export default function RepairsPage() {
   const fetchRepairs = async () => {
     setLoading(true);
     try {
-      const res = await repairService.getRepairs(1, 1000, "", statusFilter);
+      const res = await repairService.getRepairs(1, 1000, "", statusFilter, startDate, endDate);
       setRepairs(res.data);
     } catch (error) {
       console.error("Failed to fetch repairs", error);
@@ -112,6 +134,9 @@ export default function RepairsPage() {
         estimatedCost: repair.estimatedCost ? String(repair.estimatedCost) : "",
         advanceAmount: repair.advanceAmount ? String(repair.advanceAmount) : ""
       });
+      if (readOnly) {
+        fetchCallLogsForRepair(repair.id);
+      }
     } else {
       setSelectedRepair(null);
       setFormData({
@@ -131,6 +156,48 @@ export default function RepairsPage() {
     setIsDrawerOpen(true);
   };
 
+  const fetchCallLogsForRepair = async (id: string) => {
+    setLoadingCallLogs(true);
+    try {
+      const logs = await repairService.getCallLogs(id);
+      setCallLogs(logs);
+    } catch (err) {
+      console.error("Failed to fetch call logs", err);
+      setCallLogs([]);
+    } finally {
+      setLoadingCallLogs(false);
+    }
+  };
+
+  const handleOpenCallLogModal = (repair: any) => {
+    setSelectedRepairForCall(repair);
+    setCallOutcome("informed_fault");
+    setCallNotes("");
+    setIsCallLogModalOpen(true);
+  };
+
+  const handleLogCallSubmit = async () => {
+    if (!selectedRepairForCall) return;
+    setIsLoggingCall(true);
+    try {
+      await repairService.logCall(selectedRepairForCall.id, {
+        outcome: callOutcome,
+        notes: callNotes.trim() || undefined
+      });
+      setIsCallLogModalOpen(false);
+      
+      if (isDrawerOpen && selectedRepair && selectedRepair.id === selectedRepairForCall.id) {
+        fetchCallLogsForRepair(selectedRepair.id);
+      }
+      
+      fetchRepairs();
+    } catch (err) {
+      console.error("Failed to log call", err);
+    } finally {
+      setIsLoggingCall(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -143,6 +210,12 @@ export default function RepairsPage() {
     if (!formData.problemDescription?.trim()) newErrors.problemDescription = "Problem Description is required";
     if (!formData.estimatedCost || isNaN(Number(formData.estimatedCost)) || Number(formData.estimatedCost) < 0) {
       newErrors.estimatedCost = "Estimated Cost is required and must be positive";
+    }
+
+    if (formData.advanceAmount && (isNaN(Number(formData.advanceAmount)) || Number(formData.advanceAmount) < 0)) {
+      newErrors.advanceAmount = "Advance Paid must be positive";
+    } else if (Number(formData.advanceAmount || 0) >= Number(formData.estimatedCost || 0)) {
+      newErrors.advanceAmount = "Advance Paid must be less than Estimated Cost";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -201,6 +274,30 @@ export default function RepairsPage() {
     }
   };
 
+  const renderCallStatusBadge = (callStatus: string) => {
+    const statusColors: any = {
+      pending: "bg-gray-100 text-gray-700 border-gray-200",
+      informed: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      declined_by_client: "bg-red-50 text-red-700 border-red-200",
+      no_response: "bg-amber-50 text-amber-700 border-amber-200",
+    };
+
+    const statusLabels: any = {
+      pending: "Pending Contact",
+      informed: "Fault Informed",
+      declined_by_client: "Declined by Client",
+      no_response: "No Response",
+    };
+
+    const val = callStatus || "pending";
+
+    return (
+      <span className={`px-2.5 py-0.5 rounded text-xs font-semibold border inline-flex items-center justify-center shrink-0 ${statusColors[val] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
+        {statusLabels[val] || val}
+      </span>
+    );
+  };
+
   const columns: Column<any>[] = [
     {
       header: "Job No.",
@@ -215,28 +312,31 @@ export default function RepairsPage() {
       )
     },
     {
-      header: "Device",
-      accessor: "deviceType",
+      header: "Device & Issue",
       render: (job) => (
-        <span className="font-semibold text-foreground text-sm">{job.deviceType}{job.brand ? ` - ${job.brand}` : ''}</span>
+        <div className="flex flex-col gap-0.5 max-w-[200px]">
+          <span className="font-semibold text-foreground text-sm">
+            {job.deviceType}{job.brand ? ` - ${job.brand}` : ''}
+          </span>
+          <span className="text-xs text-muted-foreground truncate block" title={job.problemDescription}>
+            {job.problemDescription}
+          </span>
+        </div>
       )
     },
     {
-      header: "Issue",
+      header: "Customer",
       render: (job) => (
-        <span className="text-sm text-muted-foreground truncate max-w-[160px] block">{job.problemDescription}</span>
-      )
-    },
-    {
-      header: "Customer Name",
-      render: (job) => (
-        <span className="font-semibold text-sm text-foreground">{job.customer?.fullName || 'Walk-in'}</span>
-      )
-    },
-    {
-      header: "Customer Phone",
-      render: (job) => (
-        <span className="text-sm text-muted-foreground">{job.customer?.phoneNumber || '-'}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-sm text-foreground">
+            {job.customer?.fullName || 'Walk-in'}
+          </span>
+          {job.customer?.phoneNumber && (
+            <span className="text-xs text-muted-foreground block">
+              {job.customer.phoneNumber}
+            </span>
+          )}
+        </div>
       )
     },
     {
@@ -260,6 +360,11 @@ export default function RepairsPage() {
       }
     },
     {
+      header: "Contact Status",
+      accessor: "callStatus",
+      render: (job) => renderCallStatusBadge(job.callStatus)
+    },
+    {
       header: "Status",
       accessor: "status",
       render: (job) => <StatusBadge status={job.status} />
@@ -279,6 +384,17 @@ export default function RepairsPage() {
       cellClassName: "text-right",
       render: (job) => (
         <div className="flex items-center justify-end gap-4">
+          {job.status === "not_started" && (
+            <button
+              className="text-emerald-500 hover:text-emerald-600 transition-colors bg-transparent outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenCallLogModal(job);
+              }}
+            >
+              <Phone className="h-[18px] w-[18px] stroke-[2]" />
+            </button>
+          )}
           {job.status !== "delivered" && (
             <button
               className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
@@ -324,17 +440,28 @@ export default function RepairsPage() {
           onAddClick={isAdmin ? () => handleOpenDrawer(null, false) : undefined}
           addLabel="New Repair Job"
           toolbarExtra={
-            <select
-              className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="work_in_progress">Work in Progress</option>
-              <option value="pending_to_deliver">Pending to Deliver</option>
-              <option value="delivered">Delivered</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onRangeChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
+              <select
+                className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Statuses</option>
+                <option value="not_started">Not Started</option>
+                <option value="work_in_progress">Work in Progress</option>
+                <option value="pending_to_deliver">Pending to Deliver</option>
+                <option value="delivered">Delivered</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
           }
         />
       </div>
@@ -367,7 +494,10 @@ export default function RepairsPage() {
                         <div className="font-black text-sm text-primary">{job.jobNumber}</div>
                         <div className="text-[10px] text-muted-foreground truncate">{job.deviceType} {job.brand}</div>
                       </div>
-                      <StatusBadge status={job.status} />
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <StatusBadge status={job.status} />
+                        {renderCallStatusBadge(job.callStatus)}
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between text-xs">
@@ -391,6 +521,14 @@ export default function RepairsPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-4 mt-3 pt-3 border-t border-border/50">
+                      {job.status === "not_started" && (
+                        <button
+                          className="text-emerald-500 hover:text-emerald-600 transition-colors bg-transparent outline-none"
+                          onClick={(e) => { e.stopPropagation(); handleOpenCallLogModal(job); }}
+                        >
+                          <Phone className="h-[18px] w-[18px] stroke-[2]" />
+                        </button>
+                      )}
                       {job.status !== "delivered" && (
                         <button
                           className="text-indigo-500 hover:text-indigo-600 transition-colors bg-transparent outline-none"
@@ -468,7 +606,12 @@ export default function RepairsPage() {
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Device Repair Entry</p>
               </div>
             </div>
-            {selectedRepair && <StatusBadge status={selectedRepair.status} />}
+            {selectedRepair && (
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+                <StatusBadge status={selectedRepair.status} />
+                {renderCallStatusBadge(selectedRepair.callStatus)}
+              </div>
+            )}
           </div>
 
           {isReadOnly && selectedRepair && (
@@ -477,7 +620,10 @@ export default function RepairsPage() {
                 <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Current Progress</p>
                 <h4 className="text-xl font-bold capitalize">{formData.status.replace(/_/g, ' ')}</h4>
               </div>
-              <StatusBadge status={formData.status} />
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                <StatusBadge status={formData.status} />
+                {renderCallStatusBadge(selectedRepair.callStatus)}
+              </div>
             </div>
           )}
 
@@ -506,7 +652,7 @@ export default function RepairsPage() {
                     <SearchableSelect
                       label="Client Name"
                       required
-                      options={customersList.map(c => ({ value: c.id, label: c.fullName }))}
+                      options={customersList.map(c => ({ value: c.id, label: c.phoneNumber ? `${c.fullName} (${c.phoneNumber})` : c.fullName }))}
                       value={formData.customerId}
                       onChange={(val) => {
                         setFormData({ ...formData, customerId: val });
@@ -559,6 +705,7 @@ export default function RepairsPage() {
                           { value: "work_in_progress", label: "Work in Progress" },
                           { value: "pending_to_deliver", label: "Pending to Deliver" },
                           { value: "delivered", label: "Delivered" },
+                          { value: "declined", label: "Declined" },
                         ]}
                         value={formData.status}
                         onChange={(val) => setFormData({ ...formData, status: val })}
@@ -658,7 +805,11 @@ export default function RepairsPage() {
                         type="number"
                         placeholder="e.g. 500"
                         value={formData.advanceAmount}
-                        onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, advanceAmount: e.target.value });
+                          if (errors.advanceAmount) setErrors({ ...errors, advanceAmount: "" });
+                        }}
+                        error={errors.advanceAmount}
                         disabled={!isAdmin}
                       />
                     </div>
@@ -792,8 +943,139 @@ export default function RepairsPage() {
               </div>
             </div>
           </div>
+
+          {/* Customer Call Logs History */}
+          {isReadOnly && selectedRepair && (
+            <div className="space-y-4 pt-6 border-t animate-in fade-in duration-300">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Customer Call & Discussion Logs</label>
+                {selectedRepair?.status === "not_started" && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleOpenCallLogModal(selectedRepair)}
+                    className="h-7 px-3 text-[10px] font-black uppercase tracking-widest gap-1 rounded-xl"
+                  >
+                    <Phone className="h-3 w-3" /> Log Call
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-4 px-2 pt-2">
+                {loadingCallLogs ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="h-14 w-full bg-muted/20 animate-pulse rounded-2xl border border-dashed border-border/50" />
+                    ))}
+                  </div>
+                ) : callLogs.length === 0 ? (
+                  <div className="text-center py-6 text-xs font-bold text-muted-foreground italic bg-muted/5 rounded-2xl border border-dashed border-border/50">
+                    No communication logs recorded yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    {callLogs.map((log) => {
+                      const outcomeColors: any = {
+                        informed_fault: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+                        no_response: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+                        declined_repair: "bg-red-500/10 text-red-500 border-red-500/20",
+                        custom: "bg-teal-500/10 text-teal-600 border-teal-500/20",
+                      };
+
+                      const outcomeLabels: any = {
+                        informed_fault: "Informed Fault Details",
+                        no_response: "No Response",
+                        declined_repair: "Customer Declined Fix",
+                        custom: "Discussion Update",
+                      };
+
+                      return (
+                        <div key={log.id} className="p-3 bg-card border border-border/50 rounded-2xl space-y-1.5 shadow-sm">
+                          <div className="flex justify-between items-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${outcomeColors[log.outcome] || "bg-muted text-muted-foreground"}`}>
+                              {outcomeLabels[log.outcome] || log.outcome}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-medium flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" />
+                              {new Date(log.createdAt).toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          {log.notes && (
+                            <p className="text-xs text-foreground font-medium leading-relaxed italic">
+                              "{log.notes}"
+                            </p>
+                          )}
+                          <div className="text-[8px] font-bold text-muted-foreground uppercase text-right tracking-widest pt-0.5">
+                            Logged by: {log.createdBy?.fullName || "System"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Drawer>
+
+      {/* Log Call Modal */}
+      <Modal
+        isOpen={isCallLogModalOpen}
+        onClose={() => setIsCallLogModalOpen(false)}
+        title={`Log Call for Ticket #${selectedRepairForCall?.jobNumber}`}
+        size="md"
+        footer={
+          <div className="flex gap-3 w-full">
+            <Button variant="outline" className="flex-1" onClick={() => setIsCallLogModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="primary" 
+              className="flex-1" 
+              onClick={handleLogCallSubmit} 
+              disabled={isLoggingCall}
+            >
+              {isLoggingCall ? "Logging..." : "Log Communication"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-6 py-2">
+          <div className="space-y-2">
+            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Call Outcome</label>
+            <select
+              value={callOutcome}
+              onChange={(e) => setCallOutcome(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+            >
+              <option value="informed_fault">Spoke to Customer (Informed Fault & Cost)</option>
+              <option value="no_response">No Response (Unreachable / Call Not Answered)</option>
+              <option value="declined_repair">Customer Declined Repair (Do Not Proceed)</option>
+              <option value="custom">Custom Discussion / Update</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Notes & Details</label>
+            <textarea
+              className="w-full rounded-2xl border border-border/60 bg-background p-4 text-xs font-medium focus:ring-primary/20 transition-all min-h-[80px]"
+              placeholder={
+                callOutcome === "no_response" 
+                  ? "Optional details (e.g. called twice, busy tone)..."
+                  : "Write details of what the customer said or details informed..."
+              }
+              value={callNotes}
+              onChange={(e) => setCallNotes(e.target.value)}
+            />
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

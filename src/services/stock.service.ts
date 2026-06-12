@@ -2,10 +2,11 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const stockService = {
-  getStockMovements: async (page = 1, limit = 10) => {
-    const response = await axiosInstance.get(API_ENDPOINTS.STOCK_MOVEMENTS.GET_ALL, {
-      params: { page, limit }
-    });
+  getStockMovements: async (page = 1, limit = 10, startDate = "", endDate = "") => {
+    const params: any = { page, limit };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await axiosInstance.get(API_ENDPOINTS.STOCK_MOVEMENTS.GET_ALL, { params });
     return response.data;
   },
 

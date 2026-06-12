@@ -2,10 +2,11 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const customerService = {
-  getCustomers: async (page = 1, limit = 10, search = "") => {
-    const response = await axiosInstance.get(API_ENDPOINTS.CUSTOMERS.GET_ALL, {
-      params: { page, limit, search }
-    });
+  getCustomers: async (page = 1, limit = 10, search = "", startDate = "", endDate = "") => {
+    const params: any = { page, limit, search };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await axiosInstance.get(API_ENDPOINTS.CUSTOMERS.GET_ALL, { params });
     return response.data; // expecting { data: [...], total, page, limit } based on backend
   },
 

@@ -7,10 +7,24 @@ import { TextArea } from "@/components/shared/TextArea";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
+import { cn } from "@/lib/utils";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Sidebar/Drawer States
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
@@ -26,15 +40,18 @@ export default function CustomersPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customerHistory, setCustomerHistory] = useState<any>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState<"repairs" | "purchases">("repairs");
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await customerService.getCustomers(1, 1000, "");
+      const res = await customerService.getCustomers(1, 1000, "", startDate, endDate);
       setCustomers(res.data);
     } catch (error) {
       console.error("Failed to fetch customers", error);
@@ -65,9 +82,19 @@ export default function CustomersPage() {
     setIsFormDrawerOpen(true);
   };
 
-  const handleOpenView = (customer: any) => {
+  const handleOpenView = async (customer: any) => {
     setSelectedCustomer(customer);
     setIsViewDrawerOpen(true);
+    setLoadingHistory(true);
+    setCustomerHistory(null);
+    try {
+      const historyData = await customerService.getCustomerHistory(customer.id);
+      setCustomerHistory(historyData);
+    } catch (err) {
+      console.error("Failed to load customer history", err);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,6 +227,16 @@ export default function CustomersPage() {
           paginated
           onAddClick={() => handleOpenForm()}
           addLabel="Add Customer"
+          toolbarExtra={
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onRangeChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+            />
+          }
         />
       </div>
 
@@ -386,14 +423,120 @@ export default function CustomersPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm flex flex-col gap-1">
                 <Wrench className="h-4 w-4 text-orange-500" />
-                <span className="text-2xl font-bold">0</span>
+                <span className="text-2xl font-bold">
+                  {loadingHistory ? (
+                    <span className="block h-6 w-12 bg-muted animate-pulse rounded-md" />
+                  ) : (
+                    customerHistory?.repairJobs?.length || 0
+                  )}
+                </span>
                 <span className="text-[10px] text-muted-foreground font-bold uppercase">Repairs</span>
               </div>
               <div className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm flex flex-col gap-1">
                 <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-2xl font-bold">₹0.00</span>
+                <span className="text-2xl font-bold">
+                  {loadingHistory ? (
+                    <span className="block h-6 w-20 bg-muted animate-pulse rounded-md" />
+                  ) : (
+                    `₹${(customerHistory?.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                  )}
+                </span>
                 <span className="text-[10px] text-muted-foreground font-bold uppercase">Spent</span>
               </div>
+            </div>
+          </div>
+
+          {/* Detailed History Tabs */}
+          <div className="pt-6 border-t">
+            <div className="flex border-b border-border/50 gap-4">
+              <button
+                onClick={() => setActiveTab("repairs")}
+                className={cn(
+                  "pb-2 text-xs font-black uppercase tracking-wider border-b-2 transition-all outline-none",
+                  activeTab === "repairs"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Repair History ({loadingHistory ? "..." : customerHistory?.repairJobs?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab("purchases")}
+                className={cn(
+                  "pb-2 text-xs font-black uppercase tracking-wider border-b-2 transition-all outline-none",
+                  activeTab === "purchases"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Purchase Invoices ({loadingHistory ? "..." : customerHistory?.invoices?.length || 0})
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="pt-4">
+              {loadingHistory ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-20 w-full bg-muted/20 animate-pulse rounded-2xl border border-dashed border-border/50" />
+                  ))}
+                </div>
+              ) : activeTab === "repairs" ? (
+                (!customerHistory?.repairJobs || customerHistory.repairJobs.length === 0) ? (
+                  <div className="text-center py-8 text-xs font-bold text-muted-foreground italic bg-muted/5 rounded-2xl border border-dashed border-border/50">
+                    No repair jobs recorded for this customer.
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {customerHistory.repairJobs.map((job: any) => {
+                      const brandModelStr = [job.brand, job.model].filter((val) => val && val !== 'null').join(' ');
+                      const deviceDetails = [job.deviceType, brandModelStr ? `(${brandModelStr})` : ''].filter(Boolean).join(' ');
+                      return (
+                        <div key={job.id} className="p-4 bg-background border border-border/25 rounded-2xl space-y-2 hover:border-primary/20 transition-all">
+                          <div className="flex items-center justify-between">
+                            <span className="font-black text-sm text-primary">{job.jobNumber}</span>
+                            <StatusBadge status={job.status} />
+                          </div>
+                          <div className="text-xs font-bold text-foreground truncate">{deviceDetails}</div>
+                          {job.problemDescription && (
+                            <p className="text-[10px] text-muted-foreground line-clamp-2 italic bg-muted/10 p-2 rounded-lg">
+                              "{job.problemDescription}"
+                            </p>
+                          )}
+                          <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1 border-t border-border/10 font-bold">
+                            <span>Received: {new Date(job.receivedDate).toLocaleDateString('en-IN')}</span>
+                            <span className="text-foreground">Cost: ₹{Number(job.estimatedCost || 0).toLocaleString('en-IN')}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                (!customerHistory?.invoices || customerHistory.invoices.length === 0) ? (
+                  <div className="text-center py-8 text-xs font-bold text-muted-foreground italic bg-muted/5 rounded-2xl border border-dashed border-border/50">
+                    No invoices generated for this customer.
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {customerHistory.invoices.map((inv: any) => (
+                      <div key={inv.id} className="p-4 bg-background border border-border/25 rounded-2xl space-y-2 hover:border-primary/20 transition-all">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-sm text-primary">{inv.invoiceNumber}</span>
+                          <StatusBadge status={inv.paymentStatus} />
+                        </div>
+                        <div className="text-xs font-bold text-foreground">
+                          Total Amount: <span className="tabular-nums">₹{Number(inv.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1 border-t border-border/10 font-bold">
+                          <span>Date: {new Date(inv.invoiceDate).toLocaleDateString('en-IN')}</span>
+                          <span className="text-emerald-600">Paid: ₹{Number(inv.paidAmount).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
