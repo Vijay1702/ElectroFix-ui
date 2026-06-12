@@ -2,10 +2,11 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const invoiceService = {
-  getInvoices: async (page = 1, limit = 10, search = "", status = "") => {
-    const response = await axiosInstance.get(API_ENDPOINTS.INVOICES.GET_ALL, {
-      params: { page, limit, search, status }
-    });
+  getInvoices: async (page = 1, limit = 10, search = "", status = "", startDate = "", endDate = "") => {
+    const params: any = { page, limit, search, status };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await axiosInstance.get(API_ENDPOINTS.INVOICES.GET_ALL, { params });
     return response.data;
   },
 
@@ -35,10 +36,11 @@ export const invoiceService = {
 };
 
 export const paymentService = {
-  getPayments: async (page = 1, limit = 10, search = "") => {
-    const response = await axiosInstance.get(API_ENDPOINTS.PAYMENTS.GET_ALL, {
-      params: { page, limit, search }
-    });
+  getPayments: async (page = 1, limit = 10, search = "", startDate = "", endDate = "") => {
+    const params: any = { page, limit, search };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await axiosInstance.get(API_ENDPOINTS.PAYMENTS.GET_ALL, { params });
     return response.data;
   },
 

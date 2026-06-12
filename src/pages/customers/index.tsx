@@ -8,11 +8,23 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { cn } from "@/lib/utils";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Sidebar/Drawer States
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
@@ -34,12 +46,12 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await customerService.getCustomers(1, 1000, "");
+      const res = await customerService.getCustomers(1, 1000, "", startDate, endDate);
       setCustomers(res.data);
     } catch (error) {
       console.error("Failed to fetch customers", error);
@@ -215,6 +227,16 @@ export default function CustomersPage() {
           paginated
           onAddClick={() => handleOpenForm()}
           addLabel="Add Customer"
+          toolbarExtra={
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onRangeChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+            />
+          }
         />
       </div>
 

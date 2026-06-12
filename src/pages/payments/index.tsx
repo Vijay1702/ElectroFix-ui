@@ -6,12 +6,24 @@ import { Input } from "@/components/shared/Input";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Modal } from "@/components/shared/Modal";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Record Payment Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,12 +37,12 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     fetchPayments();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await paymentService.getPayments(1, 1000, '');
+      const res = await paymentService.getPayments(1, 1000, '', startDate, endDate);
       setPayments(res.data);
     } catch (error) {
       console.error("Failed to fetch payments", error);
@@ -168,6 +180,16 @@ export default function PaymentsPage() {
         paginated
         onAddClick={handleOpenRecordPayment}
         addLabel="Record Payment"
+        toolbarExtra={
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        }
       />
 
       {/* Record Payment Modal */}

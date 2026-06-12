@@ -33,7 +33,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { label: "Attendance", icon: Calendar, path: "/attendance", roles: ["ADMIN", "TECHNICIAN"] },
     { label: "Customers", icon: Users, path: "/customers", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Repair Jobs", icon: Wrench, path: "/repairs", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
-    { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN", "MONITOR"] },
+    { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN"] },
     { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
   ];

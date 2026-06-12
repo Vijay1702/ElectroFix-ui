@@ -15,6 +15,7 @@ import { Drawer } from "@/components/shared/Drawer";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Modal } from "@/components/shared/Modal";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,6 +29,17 @@ export default function RepairsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Dropdown States
   const [customersList, setCustomersList] = useState<any[]>([]);
@@ -65,7 +77,7 @@ export default function RepairsPage() {
 
   useEffect(() => {
     fetchRepairs();
-  }, [statusFilter]);
+  }, [statusFilter, startDate, endDate]);
 
   useEffect(() => {
     // Only admins need to fetch the full lists for dropdowns
@@ -95,7 +107,7 @@ export default function RepairsPage() {
   const fetchRepairs = async () => {
     setLoading(true);
     try {
-      const res = await repairService.getRepairs(1, 1000, "", statusFilter);
+      const res = await repairService.getRepairs(1, 1000, "", statusFilter, startDate, endDate);
       setRepairs(res.data);
     } catch (error) {
       console.error("Failed to fetch repairs", error);
@@ -428,18 +440,28 @@ export default function RepairsPage() {
           onAddClick={isAdmin ? () => handleOpenDrawer(null, false) : undefined}
           addLabel="New Repair Job"
           toolbarExtra={
-            <select
-              className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="work_in_progress">Work in Progress</option>
-              <option value="pending_to_deliver">Pending to Deliver</option>
-              <option value="delivered">Delivered</option>
-              <option value="declined">Declined</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onRangeChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
+              <select
+                className="h-9 px-3 rounded-xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Statuses</option>
+                <option value="not_started">Not Started</option>
+                <option value="work_in_progress">Work in Progress</option>
+                <option value="pending_to_deliver">Pending to Deliver</option>
+                <option value="delivered">Delivered</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
           }
         />
       </div>

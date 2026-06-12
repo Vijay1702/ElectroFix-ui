@@ -16,6 +16,7 @@ import { DataTable,type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { Modal } from "@/components/shared/Modal";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,17 @@ export default function InvoicesPage() {
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
 
   // Drawer & Form States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -60,7 +72,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     if (location.state?.highlightJobId && invoices.length > 0) {
@@ -84,7 +96,7 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await invoiceService.getInvoices(1, 1000, "", "");
+      const res = await invoiceService.getInvoices(1, 1000, "", "", startDate, endDate);
       setInvoices(res.data);
     } catch (error) {
       console.error("Failed to fetch invoices", error);
@@ -450,6 +462,16 @@ export default function InvoicesPage() {
         paginated
         onAddClick={() => setIsDrawerOpen(true)}
         addLabel="Generate Invoice"
+        toolbarExtra={
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        }
       />
 
       {/* Invoice Creation Drawer */}

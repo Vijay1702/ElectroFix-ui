@@ -65,7 +65,7 @@ export function DateRangePicker({ startDate, endDate, onRangeChange, disabled }:
     <div className="relative inline-block text-left w-full sm:w-auto">
       <div 
         className={cn(
-          "relative flex items-center justify-between bg-card border border-border/50 rounded-xl p-2 px-3 shadow-xl cursor-pointer hover:border-primary/50 transition-colors",
+          "relative flex items-center justify-between bg-card border border-border/50 rounded-xl p-2 px-3 cursor-pointer hover:border-primary/50 transition-colors",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}

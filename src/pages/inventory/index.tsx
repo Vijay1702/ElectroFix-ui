@@ -20,6 +20,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { useAuth } from "@/contexts/AuthContext";
 
 const getImageUrl = (url?: string) => {
@@ -52,6 +53,17 @@ export default function InventoryPage() {
   const [movements, setMovements] = useState<any[]>([]);
   const [movementsLoading, setMovementsLoading] = useState(false);
 
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [endDate, setEndDate] = useState(formatLocalDate(now));
+
   // Drawers States
   const [isLocationDrawerOpen, setIsLocationDrawerOpen] = useState(false);
   const [isAdjustDrawerOpen, setIsAdjustDrawerOpen] = useState(false);
@@ -83,7 +95,7 @@ export default function InventoryPage() {
     } else {
       fetchMovements();
     }
-  }, [categoryFilter, stockStatusFilter, activeTab]);
+  }, [categoryFilter, stockStatusFilter, activeTab, startDate, endDate]);
 
   useEffect(() => {
     // Fetch categories once
@@ -119,7 +131,7 @@ export default function InventoryPage() {
   const fetchMovements = async () => {
     setMovementsLoading(true);
     try {
-      const res = await stockService.getStockMovements(1, 1000);
+      const res = await stockService.getStockMovements(1, 1000, startDate, endDate);
       setMovements(res.movements || []);
     } catch (error) {
       console.error("Failed to fetch stock movements", error);
@@ -709,6 +721,16 @@ export default function InventoryPage() {
           searchable
           searchPlaceholder="Search product or movement type..."
           paginated
+          toolbarExtra={
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onRangeChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+            />
+          }
         />
       )}
 

@@ -207,11 +207,11 @@ export function MonitorDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Technician Workload */}
-        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm space-y-6">
-          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-indigo-500">
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-indigo-500 mb-6 shrink-0">
             <Users className="h-4 w-4" /> Technician Workload
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto pr-2">
             {technicianWorkload.map((tech) => {
               const activeCount = tech._count?.repairJobs || 0;
               const percentage = Math.min(100, Math.max(5, (activeCount / totalActiveRepairs) * 100));
@@ -238,11 +238,11 @@ export function MonitorDashboard() {
         </div>
 
         {/* Low Stock Alerts */}
-        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm space-y-6">
-          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-red-500">
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-red-500 mb-6 shrink-0">
             <Package className="h-4 w-4" /> Stock Alerts
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
             {lowStockItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <CheckCircle className="h-8 w-8 text-emerald-500 mb-2 opacity-50" />
@@ -267,11 +267,11 @@ export function MonitorDashboard() {
         </div>
 
         {/* Top Products */}
-        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm space-y-6">
-          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-emerald-500">
+        <div className="lg:col-span-1 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col h-[400px]">
+          <h3 className="text-sm font-black tracking-widest uppercase flex items-center gap-2 text-emerald-500 mb-6 shrink-0">
             <DollarSign className="h-4 w-4" /> Top Products (Revenue)
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
             {topProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <Package className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
