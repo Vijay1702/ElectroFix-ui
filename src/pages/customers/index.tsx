@@ -7,7 +7,6 @@ import { TextArea } from "@/components/shared/TextArea";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Modal } from "@/components/shared/Modal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { useAuth } from "@/contexts/AuthContext";
