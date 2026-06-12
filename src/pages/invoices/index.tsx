@@ -5,9 +5,9 @@ import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
 import { repairService } from "@/services/repair.service";
 import { 
-  Plus, Search, Eye, Printer, Download,
+  Plus, Search, Eye, Printer,
   Smartphone, Globe, 
-  Receipt, X, Zap
+  Receipt, X, Zap, Tag
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -20,11 +20,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import qrScanner from "@/assets/QR_Scanner.png";
+import { useGlobalLoaderStore } from "@/stores/global-loader.store";
 
 export default function InvoicesPage() {
   useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setIsLoading } = useGlobalLoaderStore();
   
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,7 @@ export default function InvoicesPage() {
     repairJobId: "",
     items: [] as any[],
     paidAmount: 0,
+    discount: 0,
     notes: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,7 +67,7 @@ export default function InvoicesPage() {
       const jobId = location.state.highlightJobId;
       const targetInvoice = invoices.find(inv => inv.repairJobId === jobId);
       if (targetInvoice) {
-        handleViewInvoice(targetInvoice.id);
+        handlePrintInvoice(targetInvoice);
         navigate(location.pathname, { replace: true, state: {} });
       }
     }
@@ -105,25 +108,7 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDownloadInvoice = async (invoice: any) => {
-    setIsDownloading(invoice.id);
-    try {
-      const blob = await invoiceService.generatePDF(invoice.id);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Invoice-${invoice.invoiceNumber}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success("Invoice downloaded successfully");
-    } catch (error) {
-      console.error("Failed to download invoice", error);
-      toast.error("Failed to download invoice");
-    } finally {
-      setIsDownloading(null);
-    }
-  };
+
 
   const handleAddItem = (product: any) => {
     const existingItem = formData.items.find(item => item.productId === product.id);
@@ -195,8 +180,10 @@ export default function InvoicesPage() {
       const totalPaid = repair.invoices?.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0) || 0;
       const remainingBalance = Math.max(0, (estCost + productCost) - totalPaid);
 
+      const brandModelStr = [repair.brand, repair.model].filter((val) => val && val !== 'null').join(' ');
+      const deviceDetails = [repair.deviceType, brandModelStr ? `(${brandModelStr})` : ''].filter(Boolean).join(' ');
       const repairItem = {
-        name: `Repair Job: ${repair.jobNumber} (${repair.brand} ${repair.model})`,
+        name: `Repair Job #${repair.jobNumber}: ${deviceDetails}` + (repair.problemDescription ? ` - ${repair.problemDescription}` : ''),
         quantity: 1,
         unitPrice: remainingBalance,
         totalPrice: remainingBalance,
@@ -227,8 +214,8 @@ export default function InvoicesPage() {
   }, [formData.items]);
 
   const tax = 0;
-  const discount = 0;
-  const grandTotal = subtotal + tax - discount;
+  const discount = Number(formData.discount || 0);
+  const grandTotal = Math.max(0, subtotal + tax - discount);
 
   useEffect(() => {
     if (paymentType === "FULL") {
@@ -296,7 +283,7 @@ export default function InvoicesPage() {
         handlePrintInvoice(newInvoice);
       }
 
-      setFormData({ customerId: "", repairJobId: "", items: [], paidAmount: 0, notes: "" });
+      setFormData({ customerId: "", repairJobId: "", items: [], paidAmount: 0, discount: 0, notes: "" });
       setPaymentType("FULL");
       setPaymentMethod("CASH");
     } catch (error: any) {
@@ -320,8 +307,9 @@ export default function InvoicesPage() {
 
   const handlePrintInvoice = async (inv: any) => {
     setIsDownloading(inv.id);
+    setIsLoading(true);
     try {
-      const response = await invoiceService.generatePDF(inv.id);
+      const response = await invoiceService.generatePDFDirect(inv);
       const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' });
       
       if (blob.size < 1000) {
@@ -367,6 +355,7 @@ export default function InvoicesPage() {
       toast.error("Failed to prepare PDF. System might be busy.");
     } finally {
       setIsDownloading(null);
+      setIsLoading(false);
     }
   };
 
@@ -529,7 +518,16 @@ export default function InvoicesPage() {
                 options={customers.map(c => ({ value: c.id, label: `${c.fullName} (${c.phoneNumber})` }))}
                 value={formData.customerId}
                 onChange={(val) => {
-                  setFormData({ ...formData, customerId: val });
+                  const currentRepair = repairs.find(r => r.id === formData.repairJobId);
+                  const newItems = currentRepair && currentRepair.customerId !== val
+                    ? formData.items.filter(item => !item.isRepair)
+                    : formData.items;
+                  setFormData({ 
+                    ...formData, 
+                    customerId: val,
+                    repairJobId: currentRepair && currentRepair.customerId === val ? formData.repairJobId : "",
+                    items: newItems
+                  });
                   if (errors.customerId) setErrors({ ...errors, customerId: "" });
                 }}
                 error={errors.customerId}
@@ -543,7 +541,17 @@ export default function InvoicesPage() {
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Linked Service Job</label>
                 <SearchableSelect
                   label="Select Completed Repair"
-                  options={repairs.map(r => ({ value: r.id, label: `${r.jobNumber} - ${r.brand} ${r.model}` }))}
+                  options={repairs
+                    .filter(r => !formData.customerId || r.customerId === formData.customerId)
+                    .map(r => {
+                      const brandModelStr = [r.brand, r.model].filter((val) => val && val !== 'null').join(' ');
+                      const deviceDetails = [r.deviceType, brandModelStr ? `(${brandModelStr})` : ''].filter(Boolean).join(' ');
+                      const labelParts = [r.jobNumber, deviceDetails, r.problemDescription].filter(Boolean);
+                      return {
+                        value: r.id,
+                        label: labelParts.join(' - ')
+                      };
+                    })}
                   value={formData.repairJobId}
                   onChange={handleSelectRepair}
                   required
@@ -690,6 +698,25 @@ export default function InvoicesPage() {
                 </tbody>
               </table>
             </div>
+
+            {formData.items.length > 0 && (
+              <div className="mt-4 p-4 rounded-2xl bg-muted/20 border border-border/50 space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between items-center text-xs font-bold text-rose-500">
+                    <span>Discount</span>
+                    <span>-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-border/50 flex justify-between items-center text-sm font-black text-foreground">
+                  <span>Grand Total</span>
+                  <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Terms */}
@@ -729,6 +756,21 @@ export default function InvoicesPage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Optional Flat Discount Input */}
+            <div className="space-y-4">
+              <Input
+                label="Discount (₹)"
+                type="number"
+                placeholder="Enter flat discount amount..."
+                value={formData.discount || ""}
+                onChange={(e) => {
+                  const val = Math.max(0, Number(e.target.value));
+                  setFormData({ ...formData, discount: val });
+                }}
+                icon={<Tag className="h-4 w-4" />}
+              />
             </div>
 
             {paymentType === "PARTIAL" && (
@@ -953,7 +995,7 @@ export default function InvoicesPage() {
                 </Button>
                 <Button 
                    variant="primary" 
-                   onClick={() => handleDownloadInvoice(selectedInvoiceForView)}
+                   onClick={() => handlePrintInvoice(selectedInvoiceForView)}
                    disabled={isDownloading === selectedInvoiceForView.id}
                    className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
                 >
@@ -961,7 +1003,7 @@ export default function InvoicesPage() {
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                    ) : (
                       <>
-                        <Download className="h-4 w-4" /> Download PDF
+                        <Printer className="h-4 w-4" /> Print
                       </>
                    )}
                 </Button>

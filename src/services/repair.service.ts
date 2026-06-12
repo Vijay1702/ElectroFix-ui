@@ -47,5 +47,15 @@ export const repairService = {
   deleteRepairJob: async (id: string) => {
     const response = await axiosInstance.delete(`${API_ENDPOINTS.REPAIRS.DELETE}/${id}`);
     return response.data;
+  },
+
+  getCallLogs: async (id: string) => {
+    const response = await axiosInstance.get(`${API_ENDPOINTS.REPAIRS.GET_BY_ID}/${id}/calls`);
+    return response.data.data;
+  },
+
+  logCall: async (id: string, data: { outcome: string; notes?: string }) => {
+    const response = await axiosInstance.post(`${API_ENDPOINTS.REPAIRS.GET_BY_ID}/${id}/calls`, data);
+    return response.data.data;
   }
 };

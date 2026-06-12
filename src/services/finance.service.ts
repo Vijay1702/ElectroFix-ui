@@ -24,6 +24,13 @@ export const invoiceService = {
       responseType: 'blob'
     });
     return response.data;
+  },
+
+  generatePDFDirect: async (invoiceData: any) => {
+    const response = await axiosInstance.post(API_ENDPOINTS.INVOICES.GENERATE_PDF_DIRECT, invoiceData, {
+      responseType: 'blob'
+    });
+    return response.data;
   }
 };
 
