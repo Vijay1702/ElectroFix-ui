@@ -323,7 +323,9 @@ export default function InvoicesPage() {
     setIsDownloading(inv.id);
     setIsLoading(true);
     try {
-      const response = await invoiceService.generatePDFDirect(inv);
+      const response = inv.id
+        ? await invoiceService.generatePDF(inv.id)
+        : await invoiceService.generatePDFDirect(inv);
       const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' });
       
       if (blob.size < 1000) {
