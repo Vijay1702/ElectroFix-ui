@@ -40,11 +40,15 @@ export function StatusBadge({ status }: StatusBadgeProps) {
       label: "Work in Progress", 
       classes: "bg-blue-50 text-blue-700 border-blue-200" 
     },
-    "pending_to_deliver": { 
-      label: "Pending to Deliver", 
-      classes: "bg-amber-50 text-amber-700 border-amber-200" 
+    "pending_to_deliver": {
+      label: "Pending to Deliver",
+      classes: "bg-amber-50 text-amber-700 border-amber-200"
     },
-    "delivered": { 
+    "bill_paymented": {
+      label: "Bill Paymented",
+      classes: "bg-purple-50 text-purple-700 border-purple-200"
+    },
+    "delivered": {
       label: "Delivered", 
       classes: "bg-green-50 text-green-700 border-green-200" 
     },

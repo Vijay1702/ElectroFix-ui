@@ -215,8 +215,8 @@ export default function RepairsPage() {
 
     if (formData.advanceAmount && (isNaN(Number(formData.advanceAmount)) || Number(formData.advanceAmount) < 0)) {
       newErrors.advanceAmount = "Advance Paid must be positive";
-    } else if (Number(formData.advanceAmount || 0) >= Number(formData.estimatedCost || 0)) {
-      newErrors.advanceAmount = "Advance Paid must be less than Estimated Cost";
+    } else if (Number(formData.advanceAmount || 0) > Number(formData.estimatedCost || 0)) {
+      newErrors.advanceAmount = "Advance Paid cannot exceed Estimated Cost";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -407,6 +407,23 @@ export default function RepairsPage() {
               <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
             </button>
           )}
+          {job.status === "bill_paymented" && (
+            <button
+              className="text-blue-500 hover:text-blue-600 transition-colors bg-transparent outline-none"
+              title="Mark as Delivered"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await repairService.updateStatus(job.id, "delivered");
+                  fetchRepairs();
+                } catch (error) {
+                  console.error("Failed to mark delivered", error);
+                }
+              }}
+            >
+              <CheckCircle2 className="h-[18px] w-[18px] stroke-[2]" />
+            </button>
+          )}
           {isAdmin && job.status !== "delivered" && (
             <button
               className="text-red-500 hover:text-red-600 transition-colors bg-transparent outline-none"
@@ -540,6 +557,23 @@ export default function RepairsPage() {
                           onClick={(e) => { e.stopPropagation(); handleOpenDrawer(job, false); }}
                         >
                           <Edit3 className="h-[18px] w-[18px] stroke-[2]" />
+                        </button>
+                      )}
+                      {job.status === "bill_paymented" && (
+                        <button
+                          className="text-blue-500 hover:text-blue-600 transition-colors bg-transparent outline-none"
+                          title="Mark as Delivered"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await repairService.updateStatus(job.id, "delivered");
+                              fetchRepairs();
+                            } catch (error) {
+                              console.error("Failed to mark delivered", error);
+                            }
+                          }}
+                        >
+                          <CheckCircle2 className="h-[18px] w-[18px] stroke-[2]" />
                         </button>
                       )}
                       {isAdmin && job.status !== "delivered" && (
@@ -709,7 +743,7 @@ export default function RepairsPage() {
                           { value: "not_started", label: "Not Started" },
                           { value: "work_in_progress", label: "Work in Progress" },
                           { value: "pending_to_deliver", label: "Pending to Deliver" },
-                          { value: "delivered", label: "Delivered" },
+                          { value: "bill_paymented", label: "Bill Paymented" },
                           { value: "declined", label: "Declined" },
                         ]}
                         value={formData.status}
