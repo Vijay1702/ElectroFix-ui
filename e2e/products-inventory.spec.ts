@@ -113,6 +113,30 @@ test.describe("products page", () => {
     });
     await expect(page.getByText("Invalid file format. Only JPG and PNG are supported.")).toBeVisible();
   });
+
+  test("uploads a valid PNG image and shows the preview", async ({ page }) => {
+    await loginViaStorage(page, "ADMIN");
+    await page.goto("/products");
+    await page.getByRole("button", { name: "Add Product" }).click();
+    await expect(page.getByRole("heading", { name: "Add New Product" })).toBeVisible();
+
+    // Minimal valid 1x1 transparent PNG.
+    const pngBase64 =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
+    const [uploadResponse] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/uploads/product") && r.request().method() === "POST"),
+      page.locator('input[type="file"]').setInputFiles({
+        name: "test-image.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(pngBase64, "base64"),
+      }),
+    ]);
+
+    expect(uploadResponse.ok(), "upload request should succeed, not fail multipart parsing").toBeTruthy();
+    await expect(page.getByAltText("Uploaded preview")).toBeVisible();
+    await expect(page.getByAltText("Uploaded preview")).toHaveAttribute("src", /\/uploads\/product\//);
+  });
 });
 
 test.describe("inventory page", () => {

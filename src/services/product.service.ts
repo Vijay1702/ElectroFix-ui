@@ -44,10 +44,11 @@ export const productService = {
   uploadImage: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
+    // Unset the instance's default "application/json" Content-Type so the
+    // browser can generate the multipart boundary itself — axios won't
+    // override an explicitly-set header on its own.
     const response = await axiosInstance.post("/uploads/product", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": undefined },
     });
     return response.data.data;
   }
