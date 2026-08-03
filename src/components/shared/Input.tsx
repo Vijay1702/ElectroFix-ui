@@ -25,9 +25,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             required={required}
             className={cn(
-              "flex h-11 w-full rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
-              error 
-                ? "border-destructive focus:border-destructive focus:ring-destructive" 
+              "flex h-11 w-full rounded-lg border bg-background px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
+              error
+                ? "border-destructive focus:border-destructive focus:ring-destructive"
                 : "border-border focus:border-primary focus:ring-primary",
               icon && "pl-10",
               endIcon && "pr-10",

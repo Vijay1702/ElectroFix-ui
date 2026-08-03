@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { userService } from "@/services/user.service";
-import { 
-  UserPlus, Mail, Phone, 
-  Trash, Edit3, Shield, User, Lock, AlertCircle 
+import {
+  Mail, Phone,
+  Trash, Edit3, Shield, User, Lock, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -72,12 +72,24 @@ export default function OnboardingPage() {
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Contact phone is required";
     else if (formData.phoneNumber.trim().length !== 10) newErrors.phoneNumber = "Phone number must be exactly 10 characters";
     
+    const passwordPolicyError = (pass: string) => {
+      if (pass.length < 8) return "Password must be at least 8 characters";
+      if (!/[a-z]/.test(pass)) return "Password must contain a lowercase letter";
+      if (!/[A-Z]/.test(pass)) return "Password must contain an uppercase letter";
+      if (!/[0-9]/.test(pass)) return "Password must contain a number";
+      return "";
+    };
+
     if (!editingUserId) {
       if (!formData.password.trim()) newErrors.password = "Access password is required";
-      else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+      else {
+        const err = passwordPolicyError(formData.password);
+        if (err) newErrors.password = err;
+      }
     } else {
-      if (formData.password.trim() && formData.password.length < 6) {
-        newErrors.password = "Password must be at least 6 characters";
+      if (formData.password.trim()) {
+        const err = passwordPolicyError(formData.password);
+        if (err) newErrors.password = err;
       }
     }
 
@@ -349,24 +361,19 @@ export default function OnboardingPage() {
         }
       >
         <div className="space-y-10">
-          <div className="relative overflow-hidden bg-primary/5 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 border border-primary/10 group">
-             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <UserPlus className="h-24 w-24" />
-             </div>
-             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-               <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-[1.25rem] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30 shrink-0">
-                 <Shield className="h-6 w-6 sm:h-8 sm:w-8" />
-               </div>
-               <div>
-                 <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-1">Authorization Protocol</p>
-                 <p className="text-lg font-black text-foreground tracking-tight">
-                   {editingUserId ? "Edit Credentials" : "Define Personnel Credentials"}
-                 </p>
-                 <p className="text-xs font-bold text-muted-foreground mt-1">
-                   {editingUserId ? "Modify access settings for active staff." : "Establishing system access for new technical staff."}
-                 </p>
-               </div>
-             </div>
+          <div className="bg-muted/20 p-6 rounded-3xl border border-border/50 flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Shield className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Authorization Protocol</p>
+              <h3 className="text-xl font-bold text-foreground">
+                {editingUserId ? "Edit Credentials" : "Define Personnel Credentials"}
+              </h3>
+              <p className="text-xs font-semibold text-muted-foreground mt-1">
+                {editingUserId ? "Modify access settings for active staff." : "Establishing system access for new technical staff."}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-8 px-2">

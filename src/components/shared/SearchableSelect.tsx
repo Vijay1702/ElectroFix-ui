@@ -61,7 +61,7 @@ export function SearchableSelect({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={cn(
-            "flex h-11 w-full items-center justify-between rounded-xl border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-11 w-full items-center justify-between rounded-lg border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
             error 
               ? "border-destructive focus:border-destructive focus:ring-destructive" 
               : "border-border focus:border-primary focus:ring-primary",
@@ -76,7 +76,7 @@ export function SearchableSelect({
 
         {isOpen && (
           <div className="absolute z-50 mt-2 w-full animate-in fade-in zoom-in-95 duration-200">
-            <div className="rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+            <div className="rounded-lg border border-border bg-card shadow-xl overflow-hidden">
               <div className="flex items-center border-b px-3 bg-muted/5">
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <input

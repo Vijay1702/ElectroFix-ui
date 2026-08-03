@@ -65,7 +65,7 @@ export function DateRangePicker({ startDate, endDate, onRangeChange, disabled }:
     <div className="relative inline-block text-left w-full sm:w-auto">
       <div 
         className={cn(
-          "relative flex items-center justify-between bg-card border border-border/50 rounded-xl h-9 px-2 cursor-pointer hover:border-primary/50 transition-colors",
+          "relative flex items-center justify-between bg-card border border-border/50 rounded-lg h-9 px-2 cursor-pointer hover:border-primary/50 transition-colors",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -80,7 +80,7 @@ export function DateRangePicker({ startDate, endDate, onRangeChange, disabled }:
       </div>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-card border border-border/50 rounded-xl shadow-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute right-0 mt-2 w-72 bg-card border border-border/50 rounded-lg shadow-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex flex-col space-y-4">
             {/* Custom Range */}
             <div className="space-y-2">

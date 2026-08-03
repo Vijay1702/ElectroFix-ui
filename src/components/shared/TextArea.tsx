@@ -17,7 +17,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           required={required}
           className={cn(
-            "flex w-full rounded-xl border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:ring-1 min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-50",
+            "flex w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:ring-1 min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-50",
             error 
               ? "border-destructive focus:border-destructive focus:ring-destructive" 
               : "border-border focus:border-primary focus:ring-primary",

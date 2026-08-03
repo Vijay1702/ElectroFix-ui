@@ -140,7 +140,15 @@ test.describe("products page", () => {
 });
 
 test.describe("inventory page", () => {
-  test("Stock Movements Ledger tab shows a recorded adjustment", async ({ page }) => {
+  test("the Stock Movements Ledger tab has been removed — inventory page shows only the Stock Levels table", async ({ page }) => {
+    await loginViaStorage(page, "ADMIN");
+    await page.goto("/inventory");
+    await expect(page.getByRole("heading", { name: "Inventory & Stock Control" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stock Movements Ledger" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Stock Levels" })).toHaveCount(0);
+  });
+
+  test("adjusting stock updates the displayed quantity in the Stock Levels table", async ({ page }) => {
     await loginViaStorage(page, "ADMIN");
     const name = uniqueName("Ledger Product");
     await createProduct(page, name);
@@ -151,35 +159,22 @@ test.describe("inventory page", () => {
     await page.locator("select").last().selectOption({ value: "in" });
     await page.locator('input[type="number"]').last().fill("7");
     await Promise.all([
-      page.waitForResponse((r) => r.url().includes("/stock-movements") && r.ok()),
+      page.waitForResponse((r) => r.url().includes("/stock-movements") && r.request().method() === "POST" && r.ok()),
       page.getByRole("button", { name: "Save Adjustment" }).click(),
     ]);
 
-    // The ledger tab visibly showed a stale/empty result briefly after
-    // switching, independent of how long the assertion waited — the movement
-    // IS present in the ledger's own GET response (confirmed by inspecting it
-    // directly), so this asserts against that response rather than fighting
-    // what looks like a client-side rendering race in the app itself.
-    const [ledgerResponse] = await Promise.all([
-      page.waitForResponse((r) => r.url().includes("/stock-movements") && r.request().method() === "GET" && r.ok()),
-      page.getByRole("button", { name: "Stock Movements Ledger" }).click(),
-    ]);
-    const movements = (await ledgerResponse.json()).data;
-    const created = movements.find((m: any) => m.product?.name === name);
-    expect(created, "the adjustment should appear in the ledger's own data").toBeTruthy();
-    expect(created.movementType).toBe("in");
-    expect(created.quantity).toBe(7);
+    await expect(page.getByRole("row").filter({ hasText: name }).getByText("7 pcs")).toBeVisible();
   });
 
-  test("Update Placement & Alerts drawer saves shelf/row/minimum stock", async ({ page }) => {
+  test("Update Placement drawer saves shelf/row", async ({ page }) => {
     await loginViaStorage(page, "ADMIN");
     const name = uniqueName("Placement Product");
     await createProduct(page, name);
 
     await page.goto("/inventory");
     await page.getByPlaceholder("Search name, code, brand...").fill(name);
-    await page.getByTitle("Update Location & Alert Level").first().click();
-    await expect(page.getByRole("heading", { name: "Update Placement & Alerts" })).toBeVisible();
+    await page.getByTitle("Update Location").first().click();
+    await expect(page.getByRole("heading", { name: "Update Placement" })).toBeVisible();
 
     await page.getByPlaceholder("e.g. Shelf A").fill("Shelf Z");
     await page.getByPlaceholder("e.g. Row 3").fill("Row 9");
@@ -193,41 +188,6 @@ test.describe("inventory page", () => {
     await row.locator("button").first().click();
     await expect(page.getByRole("heading", { name: "Product Details" })).toBeVisible();
     await expect(page.getByText("Shelf Z / Row 9")).toBeVisible();
-  });
-
-  test("Low Stock metric card filters the Stock Levels table", async ({ page }) => {
-    await loginViaStorage(page, "ADMIN");
-    const name = uniqueName("Low Stock Card Product");
-    await page.goto("/products");
-    await page.getByRole("button", { name: "Add Product" }).click();
-    await page.getByPlaceholder("e.g. Milo 1kg").fill(name);
-    await pickSearchableSelect(page, "Category", "E2E Test Category");
-    await page.getByPlaceholder("0.00").nth(0).fill("10");
-    await page.getByPlaceholder("0.00").nth(1).fill("20");
-    await page.getByPlaceholder("5").fill("100");
-    await page.getByRole("button", { name: "Save Product" }).click();
-    await expect(page.getByText(name).first()).toBeVisible();
-
-    // A brand-new product starts at 0 stock, which this app classifies as
-    // "Out of Stock" — a distinct bucket from "Low Stock" (0 < stock <=
-    // reorder level). Stock it in slightly, still well under the 100 reorder
-    // level set above, so it lands in Low Stock specifically.
-    await page.goto("/inventory");
-    await page.getByPlaceholder("Search name, code, brand...").fill(name);
-    await page.getByTitle("Adjust Stock").first().click();
-    await page.locator("select").last().selectOption({ value: "in" });
-    await page.locator('input[type="number"]').last().fill("5");
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes("/stock-movements") && r.ok()),
-      page.getByRole("button", { name: "Save Adjustment" }).click(),
-    ]);
-
-    await page.getByPlaceholder("Search name, code, brand...").fill("");
-    // "Low Stock" also matches per-row status badges — target the metric
-    // card's own heading specifically (click bubbles up to the card's onClick).
-    await page.getByRole("heading", { name: "Low Stock", exact: true }).click();
-    await page.getByPlaceholder("Search name, code, brand...").fill(name);
-    await expect(page.getByRole("row").filter({ hasText: name })).toBeVisible();
   });
 
   test("Adjust Stock: quantity 0 with the default Stock In type shows the '> zero' error, not the adjustment-specific one", async ({

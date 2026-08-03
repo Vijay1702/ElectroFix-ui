@@ -39,7 +39,7 @@ export function Pagination({ page, totalPages, limit = 10, onPageChange, onLimit
             <select 
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="bg-background border border-border/60 rounded-xl px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer hover:border-primary transition-all font-semibold"
+              className="bg-background border border-border/60 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer hover:border-primary transition-all font-semibold"
             >
               {[5, 10, 25, 50].map(val => (
                 <option key={val} value={val}>{val}</option>

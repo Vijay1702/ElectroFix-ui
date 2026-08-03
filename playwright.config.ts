@@ -45,6 +45,7 @@ export default defineConfig({
         SKIP_DOTENV: "true",
         PORT: String(API_PORT),
         DATABASE_URL,
+        CORS_ORIGIN: UI_BASE_URL,
         JWT_SECRET: "electrofix_e2e_jwt_secret",
         JWT_EXPIRES_IN: "7d",
         JWT_REFRESH_SECRET: "electrofix_e2e_refresh_secret",

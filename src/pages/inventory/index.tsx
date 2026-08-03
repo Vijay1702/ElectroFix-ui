@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
 import { productService } from "@/services/product.service";
 import { stockService } from "@/services/stock.service";
-import { 
-  AlertTriangle, 
-  Edit3, 
-  Package, 
-  DollarSign, 
-  Box, 
-  Boxes, 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw, 
-  MapPin, 
-  History,
+import {
+  Edit3,
+  Package,
+  DollarSign,
+  Box,
+  Boxes,
+  RefreshCw,
+  MapPin,
   Layers,
   Search
 } from "lucide-react";
@@ -20,7 +16,8 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
-import { DateRangePicker } from "@/components/shared/DateRangePicker";
+import { ReadOnlyField } from "@/components/shared/ReadOnlyField";
+import { InfoCallout } from "@/components/shared/InfoCallout";
 import { useAuth } from "@/contexts/AuthContext";
 
 const getImageUrl = (url?: string) => {
@@ -40,30 +37,12 @@ export default function InventoryPage() {
   const userRole = typeof user?.role === 'string' ? user.role : user?.role?.name;
   const isAdmin = userRole === "ADMIN";
 
-  // Tab State
-  const [activeTab, setActiveTab] = useState<'levels' | 'movements'>('levels');
-
   // Stock Levels States
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [categories, setCategories] = useState<any[]>([]);
-  const [stockStatusFilter, setStockStatusFilter] = useState<"ALL" | "LOW_STOCK" | "OUT_OF_STOCK" | "HEALTHY">("ALL");
-
-  // Stock Movements States
-  const [movements, setMovements] = useState<any[]>([]);
-  const [movementsLoading, setMovementsLoading] = useState(false);
-
-  const formatLocalDate = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const now = new Date();
-  const [startDate, setStartDate] = useState(formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)));
-  const [endDate, setEndDate] = useState(formatLocalDate(now));
+  const [stockStatusFilter, setStockStatusFilter] = useState<"ALL" | "OUT_OF_STOCK" | "HEALTHY">("ALL");
 
   // Drawers States
   const [isLocationDrawerOpen, setIsLocationDrawerOpen] = useState(false);
@@ -74,10 +53,8 @@ export default function InventoryPage() {
   // Location Form State
   const [locationForm, setLocationForm] = useState({
     shelf: "",
-    row: "",
-    minimumStock: ""
+    row: ""
   });
-  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
   const [locationSubmitting, setLocationSubmitting] = useState(false);
 
   // Adjust Stock Form State
@@ -91,12 +68,8 @@ export default function InventoryPage() {
 
   // Load Initial Data
   useEffect(() => {
-    if (activeTab === 'levels') {
-      fetchProducts();
-    } else {
-      fetchMovements();
-    }
-  }, [categoryFilter, stockStatusFilter, activeTab, startDate, endDate]);
+    fetchProducts();
+  }, [categoryFilter, stockStatusFilter]);
 
   useEffect(() => {
     // Fetch categories once
@@ -113,12 +86,10 @@ export default function InventoryPage() {
       let data = res.data || [];
 
       // Apply client-side stock status filter
-      if (stockStatusFilter === "LOW_STOCK") {
-        data = data.filter((p: any) => p.stockQuantity <= p.minimumStock && p.stockQuantity > 0);
-      } else if (stockStatusFilter === "OUT_OF_STOCK") {
+      if (stockStatusFilter === "OUT_OF_STOCK") {
         data = data.filter((p: any) => p.stockQuantity === 0);
       } else if (stockStatusFilter === "HEALTHY") {
-        data = data.filter((p: any) => p.stockQuantity > p.minimumStock);
+        data = data.filter((p: any) => p.stockQuantity > 0);
       }
 
       setProducts(data);
@@ -129,22 +100,9 @@ export default function InventoryPage() {
     }
   };
 
-  const fetchMovements = async () => {
-    setMovementsLoading(true);
-    try {
-      const res = await stockService.getStockMovements(1, 1000, startDate, endDate);
-      setMovements(res.movements || []);
-    } catch (error) {
-      console.error("Failed to fetch stock movements", error);
-    } finally {
-      setMovementsLoading(false);
-    }
-  };
-
   // Metrics (Always calculated from a full lookup to reflect true dashboard status)
   const [metrics, setMetrics] = useState({
     totalItems: 0,
-    lowStock: 0,
     outOfStock: 0,
     stockValue: 0
   });
@@ -153,12 +111,10 @@ export default function InventoryPage() {
     productService.getProductsLookup()
       .then(res => {
         const list = res.data || [];
-        const low = list.filter((p: any) => p.stockQuantity <= p.minimumStock && p.stockQuantity > 0).length;
         const out = list.filter((p: any) => p.stockQuantity === 0).length;
         const val = list.reduce((acc: number, p: any) => acc + (Number(p.purchasePrice) * p.stockQuantity), 0);
         setMetrics({
           totalItems: res.total || list.length,
-          lowStock: low,
           outOfStock: out,
           stockValue: val
         });
@@ -171,10 +127,8 @@ export default function InventoryPage() {
     setSelectedProduct(product);
     setLocationForm({
       shelf: product.shelf || "",
-      row: product.row || "",
-      minimumStock: product.minimumStock !== undefined ? product.minimumStock.toString() : "5"
+      row: product.row || ""
     });
-    setLocationErrors({});
     setIsLocationDrawerOpen(true);
   };
 
@@ -192,24 +146,12 @@ export default function InventoryPage() {
 
   const handleLocationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: Record<string, string> = {};
-    const minAlert = Number(locationForm.minimumStock);
-
-    if (locationForm.minimumStock === "" || isNaN(minAlert) || minAlert < 0 || !Number.isInteger(minAlert)) {
-      errors.minimumStock = "Please enter a valid positive minimum alert level";
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setLocationErrors(errors);
-      return;
-    }
 
     setLocationSubmitting(true);
     try {
       await productService.updateProduct(selectedProduct.id, {
         shelf: locationForm.shelf.trim() || null,
-        row: locationForm.row.trim() || null,
-        minimumStock: minAlert
+        row: locationForm.row.trim() || null
       });
       setIsLocationDrawerOpen(false);
       fetchProducts();
@@ -260,10 +202,6 @@ export default function InventoryPage() {
       setIsAdjustDrawerOpen(false);
       // Refresh products and metrics
       fetchProducts();
-      // If we are on the movements tab, refresh movements too
-      if (activeTab === 'movements') {
-        fetchMovements();
-      }
     } catch (error: any) {
       console.error("Stock adjustment failed", error);
       // Error handled globally
@@ -371,20 +309,16 @@ export default function InventoryPage() {
     render: (product) => {
       const isExpired = product.status === "Expired" || product.name?.toLowerCase().includes("expired");
       const isOut = product.stockQuantity === 0;
-      const isLow = product.stockQuantity <= product.minimumStock;
-      
+
       let statusText = "In Stock";
       let badgeColor = "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20";
-      
+
       if (isExpired) {
         statusText = "Expired";
         badgeColor = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold";
       } else if (isOut) {
         statusText = "Out of Stock";
         badgeColor = "bg-red-500/10 text-red-500 border border-red-500/20 font-bold";
-      } else if (isLow) {
-        statusText = "Low Stock";
-        badgeColor = "bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold";
       }
       
       return (
@@ -416,7 +350,7 @@ export default function InventoryPage() {
             size="icon" 
             className="h-8 w-8 text-muted-foreground hover:bg-accent rounded-lg"
             onClick={() => handleOpenLocationDrawer(product)}
-            title="Update Location & Alert Level"
+            title="Update Location"
           >
             <Edit3 className="h-4 w-4" />
           </Button>
@@ -425,114 +359,11 @@ export default function InventoryPage() {
     });
   }
 
-  const movementsColumns: Column<any>[] = [
-    {
-      header: "Date & Time",
-      accessor: "createdAt",
-      render: (movement) => (
-        <span className="text-xs font-semibold text-muted-foreground">
-          {new Date(movement.createdAt).toLocaleString('en-IN', {
-            dateStyle: 'medium',
-            timeStyle: 'short'
-          })}
-        </span>
-      )
-    },
-    {
-      header: "Product / Code",
-      accessor: "product.name",
-      render: (movement) => (
-        <div>
-          <div className="font-bold text-xs text-foreground">{movement.product?.name || "Deleted Product"}</div>
-          <div className="text-[9px] text-muted-foreground font-semibold uppercase">
-            {movement.product?.productCode || "-"}
-          </div>
-        </div>
-      )
-    },
-    {
-      header: "Movement Type",
-      accessor: "movementType",
-      render: (movement) => {
-        const type = movement.movementType;
-        let badgeStyle = "bg-blue-500/10 text-blue-500";
-        let Icon = RefreshCw;
-        let label = "Adjustment";
-
-        if (type === "IN" || type === "in") {
-          badgeStyle = "bg-green-500/10 text-green-500";
-          Icon = TrendingUp;
-          label = "Stock In";
-        } else if (type === "OUT" || type === "out") {
-          badgeStyle = "bg-red-500/10 text-red-500";
-          Icon = TrendingDown;
-          label = "Stock Out";
-        }
-
-        return (
-          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${badgeStyle}`}>
-            <Icon className="h-3 w-3" /> {label}
-          </span>
-        );
-      }
-    },
-    {
-      header: "Qty Change",
-      headerClassName: "text-right",
-      cellClassName: "text-right",
-      render: (movement) => {
-        const type = movement.movementType;
-        const prefix = (type === "IN" || type === "in") ? "+" : (type === "OUT" || type === "out") ? "-" : "";
-        const color = (type === "IN" || type === "in") ? "text-green-600 dark:text-green-400" : (type === "OUT" || type === "out") ? "text-red-500" : "text-blue-500";
-        return (
-          <span className={`font-black text-sm ${color}`}>
-            {prefix}{movement.quantity}
-          </span>
-        );
-      }
-    },
-    {
-      header: "Stock Ledger",
-      headerClassName: "text-center",
-      cellClassName: "text-center",
-      render: (movement) => (
-        <span className="text-xs font-bold text-muted-foreground">
-          {movement.previousStock} &rarr; {movement.currentStock}
-        </span>
-      )
-    },
-    {
-      header: "Ref / Reason",
-      accessor: "referenceType",
-      render: (movement) => (
-        <div className="text-xs">
-          <span className="font-semibold text-foreground uppercase tracking-wider text-[9px] px-1.5 py-0.5 rounded bg-muted">
-            {movement.referenceType || "MANUAL"}
-          </span>
-          {movement.referenceId && (
-            <span className="text-muted-foreground block text-[10px] mt-0.5 truncate max-w-[150px]">
-              {movement.referenceId}
-            </span>
-          )}
-        </div>
-      )
-    },
-    {
-      header: "Performed By",
-      accessor: "user.fullName",
-      render: (movement) => (
-        <span className="text-xs font-bold text-primary">
-          {movement.user?.fullName || "System"}
-        </span>
-      )
-    }
-  ];
-
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
         {/* Card 1: Total Parts */}
         <div
           onClick={() => setStockStatusFilter("ALL")}
@@ -557,33 +388,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Card 2: Low Stock */}
-        <div
-          onClick={() => setStockStatusFilter("LOW_STOCK")}
-          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 cursor-pointer border transition-all duration-300
-            ${stockStatusFilter === "LOW_STOCK" 
-              ? 'bg-amber-500 border-amber-500 text-white shadow-xl shadow-amber-500/20' 
-              : 'bg-card border-border hover:border-amber-500/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/20'
-            }`}
-        >
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${stockStatusFilter === "LOW_STOCK" ? 'text-amber-100' : 'text-amber-600 dark:text-amber-500'}`}>
-                Low Stock <AlertTriangle className="h-3 w-3" />
-              </h3>
-              <p className={`text-4xl font-black mt-1 tracking-tight ${stockStatusFilter === "LOW_STOCK" ? 'text-white' : 'text-amber-600 dark:text-amber-500'}`}>{metrics.lowStock}</p>
-            </div>
-            <div className={`p-3 rounded-xl transition-all duration-300 ${stockStatusFilter === "LOW_STOCK" ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-500 group-hover:bg-amber-200'}`}>
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-auto">
-             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${stockStatusFilter === "LOW_STOCK" ? 'bg-amber-200' : 'bg-amber-500'}`}></div>
-             <p className={`text-xs font-semibold ${stockStatusFilter === "LOW_STOCK" ? 'text-amber-100' : 'text-muted-foreground'}`}>Near alert levels</p>
-          </div>
-        </div>
-
-        {/* Card 3: Out of Stock */}
+        {/* Card 2: Out of Stock */}
         <div
           onClick={() => setStockStatusFilter("OUT_OF_STOCK")}
           className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 cursor-pointer border transition-all duration-300
@@ -641,7 +446,7 @@ export default function InventoryPage() {
               <div>
                 <h3 className="text-[10px] font-black text-green-600 dark:text-green-500 uppercase tracking-[0.15em]">Healthy Stock</h3>
                 <p className="text-4xl font-black mt-2 tracking-tight text-green-600 dark:text-green-400 drop-shadow-sm">
-                  {metrics.totalItems - metrics.lowStock - metrics.outOfStock}
+                  {metrics.totalItems - metrics.outOfStock}
                 </p>
               </div>
               <div className={`p-3 rounded-2xl transition-all duration-300 ${stockStatusFilter === "HEALTHY" ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-110' : 'bg-green-500/10 text-green-600 dark:text-green-500 group-hover:bg-green-500 group-hover:text-white group-hover:scale-110'}`}>
@@ -656,25 +461,7 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-border mb-2">
-        <button
-          className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm border-b-2 transition-all ${activeTab === 'levels' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          onClick={() => setActiveTab('levels')}
-        >
-          <Boxes className="h-4 w-4" /> Stock Levels
-        </button>
-        <button
-          className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm border-b-2 transition-all ${activeTab === 'movements' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          onClick={() => setActiveTab('movements')}
-        >
-          <History className="h-4 w-4" /> Stock Movements Ledger
-        </button>
-      </div>
-
-      {/* Content Rendering based on Tab */}
-      {activeTab === 'levels' ? (
-        <DataTable
+      <DataTable
           data={products}
           columns={levelsColumns}
           loading={loading}
@@ -704,42 +491,17 @@ export default function InventoryPage() {
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="HEALTHY">In Stock (Healthy)</option>
-                <option value="LOW_STOCK">Low Stock Alerts</option>
                 <option value="OUT_OF_STOCK">Out of Stock Only</option>
               </select>
             </>
           }
         />
-      ) : (
-        <DataTable
-          data={movements}
-          columns={movementsColumns}
-          loading={movementsLoading}
-          loadingMessage="Loading transaction logs..."
-          emptyIcon={<History className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />}
-          emptyMessage="No stock movements registered in store."
-          title="Stock Movements Ledger"
-          searchable
-          searchPlaceholder="Search product or movement type..."
-          paginated
-          toolbarExtra={
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              onRangeChange={(start, end) => {
-                setStartDate(start);
-                setEndDate(end);
-              }}
-            />
-          }
-        />
-      )}
 
       {/* Location / Placement Drawer */}
       <Drawer
         isOpen={isLocationDrawerOpen}
         onClose={() => setIsLocationDrawerOpen(false)}
-        title="Update Placement & Alerts"
+        title="Update Placement"
         footer={
           <>
             <Button variant="outline" onClick={() => setIsLocationDrawerOpen(false)}>
@@ -751,47 +513,35 @@ export default function InventoryPage() {
           </>
         }
       >
-        <div className="space-y-8 pb-6">
+        <div className="space-y-6 pb-6">
           {selectedProduct && (
-            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5">
-              <span className="text-[9px] font-black uppercase text-primary tracking-widest">Part Reference</span>
-              <h4 className="font-bold text-base text-foreground mt-1">{selectedProduct.name}</h4>
-              <p className="text-xs text-muted-foreground font-semibold uppercase">{selectedProduct.productCode}</p>
-            </div>
+            <>
+              <ReadOnlyField label="Part Name" value={selectedProduct.name} />
+              <ReadOnlyField label="Part ID" value={selectedProduct.productCode} />
+            </>
           )}
 
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input 
-                label="Store Shelf placement" 
-                placeholder="e.g. Shelf A" 
-                value={locationForm.shelf}
-                onChange={(e) => setLocationForm({...locationForm, shelf: e.target.value})}
-                icon={<MapPin className="h-4 w-4" />} 
-              />
-              <Input 
-                label="Store Row placement" 
-                placeholder="e.g. Row 3" 
-                value={locationForm.row}
-                onChange={(e) => setLocationForm({...locationForm, row: e.target.value})}
-                icon={<MapPin className="h-4 w-4" />} 
-              />
-            </div>
-
-            <Input 
-              label="Minimum Stock Alert Limit" 
-              required 
-              type="number" 
-              placeholder="e.g. 5" 
-              value={locationForm.minimumStock}
-              onChange={(e) => {
-                setLocationForm({...locationForm, minimumStock: e.target.value});
-                if (locationErrors.minimumStock) setLocationErrors({...locationErrors, minimumStock: ""});
-              }}
-              error={locationErrors.minimumStock}
-              icon={<AlertTriangle className="h-4 w-4" />} 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Store Shelf Placement"
+              placeholder="e.g. Shelf A"
+              value={locationForm.shelf}
+              onChange={(e) => setLocationForm({...locationForm, shelf: e.target.value})}
+              icon={<MapPin className="h-4 w-4" />}
+            />
+            <Input
+              label="Store Row Placement"
+              placeholder="e.g. Row 3"
+              value={locationForm.row}
+              onChange={(e) => setLocationForm({...locationForm, row: e.target.value})}
+              icon={<MapPin className="h-4 w-4" />}
             />
           </div>
+
+          <InfoCallout>
+            Updating these values will sync the physical location in the central warehouse directory
+            immediately. Ensure physical labels are updated accordingly.
+          </InfoCallout>
         </div>
       </Drawer>
 
@@ -913,15 +663,11 @@ export default function InventoryPage() {
                 </span>
                 {(() => {
                   const isOut = selectedProduct.stockQuantity === 0;
-                  const isLow = selectedProduct.stockQuantity <= selectedProduct.minimumStock;
                   let statusText = "In Stock";
                   let badgeColor = "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20";
                   if (isOut) {
                     statusText = "Out of Stock";
                     badgeColor = "bg-red-500/10 text-red-500 border border-red-500/20 font-bold";
-                  } else if (isLow) {
-                    statusText = "Low Stock";
-                    badgeColor = "bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold";
                   }
                   return (
                     <span className={`text-[10px] px-2.5 py-1 rounded uppercase font-black tracking-wider ${badgeColor}`}>
@@ -971,15 +717,7 @@ export default function InventoryPage() {
             </div>
 
             {/* Pricing Details */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              {isAdmin && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Cost Price</p>
-                  <p className="text-sm font-bold text-muted-foreground">
-                    ₹{Number(selectedProduct.purchasePrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              )}
+            <div className="pt-4 border-t border-border">
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 font-bold">Selling Price</p>
                 <p className="text-base font-black text-green-600 dark:text-green-400">
