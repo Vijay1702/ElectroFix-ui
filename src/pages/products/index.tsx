@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 const getImageUrl = (url?: string) => {
   if (!url) return "";
+  if (url.startsWith("data:image")) return url;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
   try {
