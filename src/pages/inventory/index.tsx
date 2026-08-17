@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { Select } from "@/components/shared/Select";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
 import { ReadOnlyField } from "@/components/shared/ReadOnlyField";
@@ -575,38 +576,29 @@ export default function InventoryPage() {
           )}
 
           <div className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                Adjustment Type
-              </label>
-              <select
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                value={adjustForm.movementType}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  let defRef = "Restock";
-                  if (val === "out") defRef = "Damaged / Defective";
-                  if (val === "adjustment") defRef = "Manual Audit";
-                  setAdjustForm({
-                    ...adjustForm, 
-                    movementType: val,
-                    referenceType: defRef
-                  });
-                }}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value="in">Stock In (Add Stock)</option>
-                <option value="out">Stock Out (Reduce Stock)</option>
-                <option value="adjustment">Manual Adjustment (Override)</option>
-              </select>
-            </div>
+            <Select
+              label="Adjustment Type"
+              icon={<RefreshCw className="h-4 w-4" />}
+              value={adjustForm.movementType}
+              onChange={(e) => {
+                const val = e.target.value;
+                let defRef = "Restock";
+                if (val === "out") defRef = "Damaged / Defective";
+                if (val === "adjustment") defRef = "Manual Audit";
+                setAdjustForm({
+                  ...adjustForm,
+                  movementType: val,
+                  referenceType: defRef
+                });
+              }}
+              options={[
+                { value: "in", label: "Stock In (Add Stock)" },
+                { value: "out", label: "Stock Out (Reduce Stock)" },
+                { value: "adjustment", label: "Manual Adjustment (Override)" },
+              ]}
+            />
 
-            <Input 
+            <Input
               label={adjustForm.movementType === "adjustment" ? "Quantity Change (Positive or Negative)" : "Quantity"} 
               required 
               type="number" 

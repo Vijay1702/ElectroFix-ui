@@ -13,6 +13,7 @@ interface SearchableSelectProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  icon?: React.ReactNode;
   label?: string;
   required?: boolean;
   error?: string;
@@ -25,6 +26,7 @@ export function SearchableSelect({
   value,
   onChange,
   placeholder = "Select an option...",
+  icon,
   label,
   required,
   error,
@@ -56,22 +58,28 @@ export function SearchableSelect({
       {label && <Label required={required}>{label}</Label>}
       
       <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10">
+            {icon}
+          </div>
+        )}
         <button
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={cn(
             "flex h-11 w-full items-center justify-between rounded-lg border bg-background px-4 py-2 text-sm outline-none transition-all focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
-            error 
-              ? "border-destructive focus:border-destructive focus:ring-destructive" 
+            error
+              ? "border-destructive focus:border-destructive focus:ring-destructive"
               : "border-border focus:border-primary focus:ring-primary",
-            isOpen && "border-primary ring-1 ring-primary"
+            isOpen && "border-primary ring-1 ring-primary",
+            icon && "pl-10"
           )}
         >
           <span className={cn("truncate", !selectedOption && "text-muted-foreground")}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0", isOpen && "rotate-180")} />
         </button>
 
         {isOpen && (

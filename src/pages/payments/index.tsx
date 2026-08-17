@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { paymentService, invoiceService } from "@/services/finance.service";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Receipt, Hash, FileText } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { TextArea } from "@/components/shared/TextArea";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Modal } from "@/components/shared/Modal";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
@@ -231,6 +232,7 @@ export default function PaymentsPage() {
               value={selectedInvoiceId}
               onChange={handleSelectInvoice}
               required
+              icon={<Receipt className="h-4 w-4" />}
             />
           </div>
 
@@ -306,19 +308,18 @@ export default function PaymentsPage() {
                     placeholder="Enter TXN ID, Cheque No, etc..."
                     value={referenceNumber}
                     onChange={(e) => setReferenceNumber(e.target.value)}
+                    icon={<Hash className="h-4 w-4" />}
                   />
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Notes</label>
-                <textarea
-                  className="w-full rounded-2xl border-border/50 bg-muted/5 p-4 text-xs font-medium focus:ring-primary/20 transition-all min-h-[80px]"
-                  placeholder="Memo or settlement specifics..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
+              <TextArea
+                label="Notes"
+                placeholder="Memo or settlement specifics..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                icon={<FileText className="h-4 w-4" />}
+              />
             </div>
           )}
         </div>

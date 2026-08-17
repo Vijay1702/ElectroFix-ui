@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { productService } from "@/services/product.service";
-import { AlertTriangle, Edit3, Trash, Package, Tag, DollarSign, Upload } from "lucide-react";
+import { AlertTriangle, Edit3, Trash, Package, Tag, DollarSign, Upload, Layers, Bookmark, FileText } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
@@ -492,13 +492,15 @@ export default function ProductsPage() {
                         if (errors.categoryId) setErrors({...errors, categoryId: ""});
                       }}
                       error={errors.categoryId}
+                      icon={<Layers className="h-4 w-4" />}
                     />
 
-                    <Input 
-                      label="Brand" 
-                      placeholder="e.g. Nestlé" 
+                    <Input
+                      label="Brand"
+                      placeholder="e.g. Nestlé"
                       value={formData.brand}
                       onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                      icon={<Bookmark className="h-4 w-4" />}
                     />
                   </div>
                </div>
@@ -578,11 +580,12 @@ export default function ProductsPage() {
                  {formData.description || 'No description provided.'}
                </div>
              ) : (
-               <TextArea 
+               <TextArea
                  label="Description"
                  placeholder="Enter product specifications or compatibility notes..."
                  value={formData.description}
                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                 icon={<FileText className="h-4 w-4" />}
                />
              )}
           </div>

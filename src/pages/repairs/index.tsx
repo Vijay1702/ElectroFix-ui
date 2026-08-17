@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { repairService } from "@/services/repair.service";
 import { customerService } from "@/services/customer.service";
 import { userService } from "@/services/user.service";
-import { Calendar, Smartphone, CheckCircle2, Edit3, Trash, Phone, Clock } from "lucide-react";
+import { Calendar, Smartphone, CheckCircle2, Edit3, Trash, Phone, Clock, User, UserCog, Activity, Hash, Tag, Cpu, IndianRupee, Wallet, FileText, PhoneCall, MessageSquare } from "lucide-react";
 
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -12,6 +12,7 @@ import { TextArea } from "@/components/shared/TextArea";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
+import { Select } from "@/components/shared/Select";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Modal } from "@/components/shared/Modal";
@@ -699,6 +700,7 @@ export default function RepairsPage() {
                       }}
                       error={errors.customerId}
                       disabled={!isAdmin}
+                      icon={<User className="h-4 w-4" />}
                     />
                     <Input
                       label="Expected Delivery"
@@ -735,6 +737,7 @@ export default function RepairsPage() {
                       }}
                       error={errors.technicianId}
                       disabled={!isAdmin}
+                      icon={<UserCog className="h-4 w-4" />}
                     />
                     {selectedRepair && (
                       <SearchableSelect
@@ -748,6 +751,7 @@ export default function RepairsPage() {
                         ]}
                         value={formData.status}
                         onChange={(val) => setFormData({ ...formData, status: val })}
+                        icon={<Activity className="h-4 w-4" />}
                       />
                     )}
                   </div>
@@ -796,6 +800,7 @@ export default function RepairsPage() {
                       }}
                       error={errors.jobNumber}
                       disabled={!!selectedRepair && !isAdmin}
+                      icon={<Hash className="h-4 w-4" />}
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
@@ -809,6 +814,7 @@ export default function RepairsPage() {
                         }}
                         error={errors.deviceType}
                         disabled={!isAdmin}
+                        icon={<Smartphone className="h-4 w-4" />}
                       />
                       <Input
                         label="Brand"
@@ -816,6 +822,7 @@ export default function RepairsPage() {
                         value={formData.brand}
                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                         disabled={!isAdmin}
+                        icon={<Tag className="h-4 w-4" />}
                       />
                     </div>
                     <Input
@@ -824,6 +831,7 @@ export default function RepairsPage() {
                       value={formData.model}
                       onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                       disabled={!isAdmin}
+                      icon={<Cpu className="h-4 w-4" />}
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
@@ -838,6 +846,7 @@ export default function RepairsPage() {
                         error={errors.estimatedCost}
                         required
                         disabled={!isAdmin}
+                        icon={<IndianRupee className="h-4 w-4" />}
                       />
                       <Input
                         label="Advance Paid (₹)"
@@ -850,6 +859,7 @@ export default function RepairsPage() {
                         }}
                         error={errors.advanceAmount}
                         disabled={!isAdmin}
+                        icon={<Wallet className="h-4 w-4" />}
                       />
                     </div>
                   </div>
@@ -875,6 +885,7 @@ export default function RepairsPage() {
                     }}
                     error={errors.problemDescription}
                     disabled={!isAdmin}
+                    icon={<FileText className="h-4 w-4" />}
                   />
                 )}
               </div>
@@ -1086,33 +1097,30 @@ export default function RepairsPage() {
         }
       >
         <div className="space-y-6 py-2">
-          <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Call Outcome</label>
-            <select
-              value={callOutcome}
-              onChange={(e) => setCallOutcome(e.target.value)}
-              className="w-full h-11 px-3 rounded-2xl border border-border/60 bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-            >
-              <option value="informed_fault">Spoke to Customer (Informed Fault & Cost)</option>
-              <option value="no_response">No Response (Unreachable / Call Not Answered)</option>
-              <option value="declined_repair">Customer Declined Repair (Do Not Proceed)</option>
-              <option value="custom">Custom Discussion / Update</option>
-            </select>
-          </div>
+          <Select
+            label="Call Outcome"
+            value={callOutcome}
+            onChange={(e) => setCallOutcome(e.target.value)}
+            icon={<PhoneCall className="h-4 w-4" />}
+            options={[
+              { value: "informed_fault", label: "Spoke to Customer (Informed Fault & Cost)" },
+              { value: "no_response", label: "No Response (Unreachable / Call Not Answered)" },
+              { value: "declined_repair", label: "Customer Declined Repair (Do Not Proceed)" },
+              { value: "custom", label: "Custom Discussion / Update" },
+            ]}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Notes & Details</label>
-            <textarea
-              className="w-full rounded-2xl border border-border/60 bg-background p-4 text-xs font-medium focus:ring-primary/20 transition-all min-h-[80px]"
-              placeholder={
-                callOutcome === "no_response" 
-                  ? "Optional details (e.g. called twice, busy tone)..."
-                  : "Write details of what the customer said or details informed..."
-              }
-              value={callNotes}
-              onChange={(e) => setCallNotes(e.target.value)}
-            />
-          </div>
+          <TextArea
+            label="Notes & Details"
+            placeholder={
+              callOutcome === "no_response"
+                ? "Optional details (e.g. called twice, busy tone)..."
+                : "Write details of what the customer said or details informed..."
+            }
+            value={callNotes}
+            onChange={(e) => setCallNotes(e.target.value)}
+            icon={<MessageSquare className="h-4 w-4" />}
+          />
         </div>
       </Modal>
     </>

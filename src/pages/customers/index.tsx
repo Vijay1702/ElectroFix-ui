@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { customerService } from "@/services/customer.service";
-import { Edit3, Trash, User, Phone, MapPin, Calendar, Wrench, DollarSign } from "lucide-react";
+import { Edit3, Trash, User, Phone, MapPin, Calendar, Wrench, DollarSign, FileText } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/TextArea";
@@ -350,17 +350,19 @@ export default function CustomersPage() {
           <div className="space-y-2 pt-4 border-t">
             <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Location & Notes</label>
             <div className="space-y-4 pt-2">
-              <TextArea 
+              <TextArea
                 label="Billing Address"
                 placeholder="Street, City, Postal Code"
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
+                icon={<MapPin className="h-4 w-4" />}
               />
-              <TextArea 
+              <TextArea
                 label="Internal Notes"
                 placeholder="Any special instructions or details..."
                 value={formData.notes}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                icon={<FileText className="h-4 w-4" />}
               />
             </div>
           </div>

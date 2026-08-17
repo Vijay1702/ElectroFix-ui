@@ -4,13 +4,14 @@ import { invoiceService } from "@/services/finance.service";
 import { customerService } from "@/services/customer.service";
 import { productService } from "@/services/product.service";
 import { repairService } from "@/services/repair.service";
-import { 
+import {
   Plus, Search, Eye, Printer,
-  Smartphone, Globe, 
-  Receipt, X, Zap, Tag
+  Smartphone, Globe,
+  Receipt, X, Zap, Tag, User, Wrench, FileText
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { TextArea } from "@/components/shared/TextArea";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DataTable,type Column } from "@/components/shared/DataTable";
 import { Drawer } from "@/components/shared/Drawer";
@@ -558,6 +559,7 @@ export default function InvoicesPage() {
                 }}
                 error={errors.customerId}
                 required
+                icon={<User className="h-4 w-4" />}
               />
             </div>
 
@@ -581,6 +583,7 @@ export default function InvoicesPage() {
                   value={formData.repairJobId}
                   onChange={handleSelectRepair}
                   required
+                  icon={<Wrench className="h-4 w-4" />}
                 />
                 
                 {formData.repairJobId && (() => {
@@ -840,12 +843,12 @@ export default function InvoicesPage() {
             )}
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Internal Audit Notes</label>
-              <textarea
-                className="w-full rounded-2xl border-border/50 bg-muted/5 p-4 text-xs font-medium focus:ring-primary/20 transition-all min-h-[80px]"
+              <TextArea
+                label="Internal Audit Notes"
                 placeholder="Add private memos or settlement specifics..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                icon={<FileText className="h-4 w-4" />}
               />
             </div>
           </div>
