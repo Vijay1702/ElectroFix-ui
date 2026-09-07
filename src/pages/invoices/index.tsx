@@ -21,7 +21,7 @@ import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import qrScanner from "@/assets/QR_Scanner.png";
+import vijayQR from "@/assets/Vijay_QR.jpeg";
 import { useGlobalLoaderStore } from "@/stores/global-loader.store";
 
 export default function InvoicesPage() {
@@ -1070,10 +1070,10 @@ export default function InvoicesPage() {
           </div>
 
           <div className="relative p-8 bg-white rounded-3xl border-2 border-primary/10 shadow-xl group transition-all">
-            <img 
-              src={qrScanner} 
-              alt="QR Code" 
-              className="h-64 w-64 object-contain" 
+            <img
+              src={vijayQR}
+              alt="QR Code"
+              className="h-64 w-64 object-contain"
             />
             
             {/* Scan animation overlay - subtle */}
