@@ -9,6 +9,7 @@ import PaymentsPage from "@/pages/payments";
 import OnboardingPage from "@/pages/onboarding";
 import AttendancePage from "@/pages/attendance";
 import AuditLogsPage from "@/pages/audit";
+import ExpensesPage from "@/pages/expenses";
 import LoginPage from "@/pages/auth/LoginPage";
 import AppLayout from "@/components/layout/AppLayout";
 import { authService } from "@/services/auth.service";
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: "/audit",
         element: <AuditLogsPage />,
+      },
+      {
+        path: "/expenses",
+        element: <ExpensesPage />,
       },
     ],
   },

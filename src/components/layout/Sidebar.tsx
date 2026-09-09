@@ -1,15 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Wrench, 
+import {
+  LayoutDashboard,
+  Users,
+  Wrench,
   Tag,
   Boxes,
-  FileText, 
+  FileText,
   UserPlus,
   LogOut,
   Calendar,
   ClipboardList,
+  DollarSign,
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { label: "Products", icon: Tag, path: "/products", roles: ["ADMIN"] },
     { label: "Inventory", icon: Boxes, path: "/inventory", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
     { label: "Invoices", icon: FileText, path: "/invoices", roles: ["ADMIN", "TECHNICIAN", "MONITOR"] },
+    { label: "Expenses", icon: DollarSign, path: "/expenses", roles: ["ADMIN", "MONITOR"] },
     { label: "Audit Logs", icon: ClipboardList, path: "/audit", roles: ["MONITOR"] },
   ];
 

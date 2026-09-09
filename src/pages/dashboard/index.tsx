@@ -3,10 +3,10 @@ import { dashboardService } from "@/services/dashboard.service";
 import { MonitorDashboard } from "./MonitorDashboard";
 import { notificationService } from "@/services/notification.service";
 import { toast } from "sonner";
-import { 
-  Wrench, CheckCircle, DollarSign, 
+import {
+  Wrench, CheckCircle, DollarSign,
   FileText, CreditCard, ArrowUpRight,
-  TrendingUp, Activity, Users, Box, Zap, ShieldCheck
+  TrendingUp, Activity, Users, Box, Zap, ShieldCheck, TrendingDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/shared/Button";
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const isAdmin = userRole === "ADMIN";
   
   const [summary, setSummary] = useState<any>(null);
+  const [expenses, setExpenses] = useState<any>(null);
   const [recentRepairs, setRecentRepairs] = useState<any[]>([]);
   const [technicianWorkload, setTechnicianWorkload] = useState<any[]>([]);
   const [lowStockItems, setLowStockItems] = useState<any[]>([]);
@@ -45,16 +46,18 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         setRefreshing(true);
-        const [sumRes, repRes, techRes, lowStockRes] = await Promise.all([
+        const [sumRes, repRes, techRes, lowStockRes, expRes] = await Promise.all([
           dashboardService.getSummary(startDate, endDate),
           dashboardService.getRecentRepairs(5, startDate, endDate),
           dashboardService.getTechnicianWorkload(startDate, endDate),
-          dashboardService.getLowStock(5)
+          dashboardService.getLowStock(5),
+          dashboardService.getExpenseSummary(startDate, endDate)
         ]);
         setSummary(sumRes);
         setRecentRepairs(repRes);
         setTechnicianWorkload(techRes);
         setLowStockItems(lowStockRes || []);
+        setExpenses(expRes);
       } catch (error) {
         console.error("Dashboard synchronization failure", error);
         toast.error("Failed to load dashboard data");
@@ -142,7 +145,13 @@ export default function DashboardPage() {
           { label: "Active Repairs", value: summary?.activeRepairs, detail: "Active & not started", icon: Wrench, classes: { glow: "bg-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-500", badgeText: "text-blue-600 dark:text-blue-400" } },
           { label: "Pending to Deliver", value: summary?.pendingToDeliverRepairs, detail: "Awaiting delivery", icon: Activity, classes: { glow: "bg-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-500", badgeText: "text-amber-600 dark:text-amber-400" } },
           { label: "Throughput", value: summary?.completedToday, detail: "Completed today", icon: CheckCircle, classes: { glow: "bg-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-500", badgeText: "text-emerald-600 dark:text-emerald-400" } },
-          ...((isAdmin || userRole === "MONITOR") ? [{ label: `Net Revenue`, value: `₹${Number(summary?.periodRevenue || 0).toLocaleString('en-IN')}`, detail: `Gross: ₹${Number(summary?.periodGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }] : [{ label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }])
+          ...((isAdmin || userRole === "MONITOR") ? [
+            { label: `Net Revenue`, value: `₹${Number(summary?.periodRevenue || 0).toLocaleString('en-IN')}`, detail: `Gross: ₹${Number(summary?.periodGross || 0).toLocaleString('en-IN')}`, icon: DollarSign, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } },
+            { label: "Total Expenses", value: `₹${Number(expenses?.total || 0).toLocaleString('en-IN')}`, detail: `${expenses?.count || 0} records`, icon: TrendingDown, classes: { glow: "bg-red-500", bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-500", badgeText: "text-red-600 dark:text-red-400" } },
+            { label: "Net Balance", value: `₹${Number((Number(summary?.periodRevenue || 0) - Number(expenses?.total || 0))).toLocaleString('en-IN')}`, detail: `Revenue - Expense`, icon: CreditCard, classes: { glow: "bg-green-500", bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-500", badgeText: "text-green-600 dark:text-green-400" } }
+          ] : [
+            { label: "Staff Efficiency", value: "92%", detail: "Target: 90%+", icon: TrendingUp, classes: { glow: "bg-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-500", badgeText: "text-indigo-600 dark:text-indigo-400" } }
+          ])
         ].map((stat, i) => (
           <div key={i} className="relative group overflow-hidden rounded-2xl">
             <div className="relative bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-4 lg:p-5 shadow-xl hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-1 h-full">

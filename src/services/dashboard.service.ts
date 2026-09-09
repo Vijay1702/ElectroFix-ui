@@ -79,4 +79,13 @@ export const dashboardService = {
     const response = await axiosInstance.get(`${API_ENDPOINTS.DASHBOARD.TOP_CUSTOMERS}?${params.toString()}`);
     return response.data.data;
   },
+
+  getExpenseSummary: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const url = params.toString() ? `${API_ENDPOINTS.EXPENSES.TOTAL}?${params.toString()}` : API_ENDPOINTS.EXPENSES.TOTAL;
+    const response = await axiosInstance.get(url);
+    return response.data.data;
+  },
 };

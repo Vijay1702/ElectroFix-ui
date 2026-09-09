@@ -104,4 +104,14 @@ export const API_ENDPOINTS = {
     BULK: "/attendance/bulk",
     PAYROLL: "/attendance/payroll",
   },
+
+  EXPENSES: {
+    GET_ALL: "/expenses",
+    GET_BY_ID: "/expenses",
+    CREATE: "/expenses",
+    UPDATE: "/expenses",
+    DELETE: "/expenses",
+    BY_DATE_RANGE: "/expenses/date-range/search",
+    TOTAL: "/expenses/summary/total",
+  },
 };
