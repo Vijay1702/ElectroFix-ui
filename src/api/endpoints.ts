@@ -78,6 +78,7 @@ export const API_ENDPOINTS = {
     TOP_PRODUCTS: "/dashboard/top-products",
     TOP_DEVICES: "/dashboard/top-devices",
     TOP_CUSTOMERS: "/dashboard/top-customers",
+    DAILY_BREAKDOWN: "/dashboard/daily-breakdown",
   },
 
   REPORTS: {

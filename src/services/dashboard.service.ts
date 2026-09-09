@@ -88,4 +88,13 @@ export const dashboardService = {
     const response = await axiosInstance.get(url);
     return response.data.data;
   },
+
+  getDailyBreakdown: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const url = params.toString() ? `${API_ENDPOINTS.DASHBOARD.DAILY_BREAKDOWN}?${params.toString()}` : API_ENDPOINTS.DASHBOARD.DAILY_BREAKDOWN;
+    const response = await axiosInstance.get(url);
+    return response.data.data;
+  }
 };

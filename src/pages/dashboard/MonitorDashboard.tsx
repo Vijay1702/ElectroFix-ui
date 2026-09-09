@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { dashboardService } from "@/services/dashboard.service";
-import { 
+import {
   Activity, Wrench, Package, Users, Receipt,
-  DollarSign, CheckCircle, ShieldCheck 
+  DollarSign, CheckCircle, ShieldCheck
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -21,6 +21,7 @@ export function MonitorDashboard() {
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [topDevices, setTopDevices] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
+  const [dailyBreakdown, setDailyBreakdown] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const formatLocalDate = (d: Date) => {
@@ -37,7 +38,7 @@ export function MonitorDashboard() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const [sumRes, repRes, salesRes, lowStockRes, techRes, weeklyRes, topProdRes, topDevRes, topCustRes] = await Promise.all([
+      const [sumRes, repRes, salesRes, lowStockRes, techRes, weeklyRes, topProdRes, topDevRes, topCustRes, breakdownRes] = await Promise.all([
         dashboardService.getSummary(startDate, endDate),
         dashboardService.getRecentRepairs(4, startDate, endDate),
         dashboardService.getRecentSales(4, startDate, endDate),
@@ -46,7 +47,8 @@ export function MonitorDashboard() {
         dashboardService.getWeeklyPerformance(startDate, endDate),
         dashboardService.getTopProducts(5, startDate, endDate),
         dashboardService.getTopDevices(5, startDate, endDate),
-        dashboardService.getTopCustomers(5, startDate, endDate)
+        dashboardService.getTopCustomers(5, startDate, endDate),
+        dashboardService.getDailyBreakdown(startDate, endDate)
       ]);
       setSummary(sumRes);
       setRecentRepairs(repRes || []);
@@ -57,6 +59,7 @@ export function MonitorDashboard() {
       setTopProducts(topProdRes || []);
       setTopDevices(topDevRes || []);
       setTopCustomers(topCustRes || []);
+      setDailyBreakdown(breakdownRes || []);
     } catch (error) {
       console.error("Dashboard synchronization failure", error);
     } finally {
@@ -694,6 +697,70 @@ export function MonitorDashboard() {
                     </TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+
+      {/* Daily Breakdown Table */}
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-card/60 backdrop-blur-xl border border-white/10 dark:border-white/5 rounded-2xl overflow-hidden shadow-xl">
+          <div className="p-4 lg:p-5 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-background to-transparent">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                <Receipt className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black tracking-tight">Daily Financial Breakdown</h2>
+                <p className="text-xs font-semibold text-muted-foreground">Revenue, Expenses & Net Profit by Date</p>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto p-2">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-border/40">
+                  <TableHead className="text-xs uppercase tracking-wider font-bold">Date</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">Revenue</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">Expenses</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider font-bold">Net Profit</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dailyBreakdown.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-sm font-medium">
+                      No data available for the selected period
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  dailyBreakdown.map((day, idx) => (
+                    <TableRow
+                      key={idx}
+                      className="cursor-default hover:bg-muted/30 transition-colors border-border/20"
+                    >
+                      <TableCell className="font-bold text-foreground">
+                        {day.date}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-emerald-500">
+                          ₹{Number(day.revenue).toLocaleString("en-IN")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-red-500">
+                          ₹{Number(day.expense).toLocaleString("en-IN")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`font-bold ${day.netRevenue >= 0 ? "text-green-500" : "text-red-500"}`}>
+                          ₹{Number(day.netRevenue).toLocaleString("en-IN")}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
