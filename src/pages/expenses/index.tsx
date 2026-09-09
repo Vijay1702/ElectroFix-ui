@@ -17,6 +17,7 @@ interface Expense {
   expenseName: string;
   amount: number;
   description?: string;
+  hasBill: boolean;
   expenseDate: string;
   user: {
     id: string;
@@ -53,6 +54,7 @@ export default function ExpensesPage() {
     expenseName: "",
     amount: 0,
     description: "",
+    hasBill: false,
     expenseDate: formatLocalDate(now)
   });
 
@@ -103,6 +105,7 @@ export default function ExpensesPage() {
         expenseName: "",
         amount: 0,
         description: "",
+        hasBill: false,
         expenseDate: formatLocalDate(now)
       });
       setEditingExpense(null);
@@ -123,6 +126,7 @@ export default function ExpensesPage() {
       expenseName: expense.expenseName,
       amount: expense.amount,
       description: expense.description || "",
+      hasBill: expense.hasBill || false,
       expenseDate: expense.expenseDate.split('T')[0]
     });
     setIsDrawerOpen(true);
@@ -288,6 +292,7 @@ export default function ExpensesPage() {
             expenseName: "",
             amount: 0,
             description: "",
+            hasBill: false,
             expenseDate: formatLocalDate(now)
           });
           setErrors({});
@@ -316,6 +321,7 @@ export default function ExpensesPage() {
             expenseName: "",
             amount: 0,
             description: "",
+            hasBill: false,
             expenseDate: formatLocalDate(now)
           });
           setErrors({});
@@ -334,6 +340,7 @@ export default function ExpensesPage() {
                   expenseName: "",
                   amount: 0,
                   description: "",
+                  hasBill: false,
                   expenseDate: formatLocalDate(now)
                 });
                 setErrors({});
@@ -382,6 +389,34 @@ export default function ExpensesPage() {
               required
               icon={<DollarSign className="h-4 w-4" />}
             />
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-foreground">Bill Available</label>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="hasBill"
+                  value="yes"
+                  checked={formData.hasBill === true}
+                  onChange={() => setFormData({ ...formData, hasBill: true })}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-sm font-medium text-foreground">Yes</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="hasBill"
+                  value="no"
+                  checked={formData.hasBill === false}
+                  onChange={() => setFormData({ ...formData, hasBill: false })}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-sm font-medium text-foreground">No</span>
+              </label>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -445,6 +480,13 @@ export default function ExpensesPage() {
               <p className="text-lg font-black text-primary tabular-nums">
                 ₹{Number(selectedExpense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </p>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Bill Available</p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-sm" style={{backgroundColor: selectedExpense.hasBill ? '#10b98120' : '#ef444420', color: selectedExpense.hasBill ? '#059669' : '#dc2626'}}>
+                {selectedExpense.hasBill ? '✓ Yes' : '✗ No'}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
