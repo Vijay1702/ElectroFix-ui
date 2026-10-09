@@ -7,7 +7,7 @@ import { repairService } from "@/services/repair.service";
 import {
   Plus, Search, Eye, Printer,
   Smartphone, Globe,
-  Receipt, X, Zap, Tag, User, Wrench, FileText
+  Receipt, X, Zap, Tag, User, Wrench, FileText, Phone, IndianRupee
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -54,7 +54,7 @@ export default function InvoicesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
-  const [invoiceType, setInvoiceType] = useState<"REPAIR" | "PRODUCT" | "BOTH">("REPAIR");
+  const [invoiceType, setInvoiceType] = useState<"REPAIR" | "PRODUCT" | "BOTH" | "IMMEDIATE">("REPAIR");
   const [paymentType, setPaymentType] = useState<"FULL" | "PARTIAL">("FULL");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "QR">("CASH");
   
@@ -69,7 +69,12 @@ export default function InvoicesPage() {
     items: [] as any[],
     paidAmount: 0,
     discount: 0,
-    notes: ""
+    notes: "",
+    immediateCustomerName: "",
+    immediateCustomerPhone: "",
+    immediateItemName: "",
+    immediateQuantity: 1,
+    immediatePrice: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -225,8 +230,9 @@ export default function InvoicesPage() {
   };
 
   const subtotal = useMemo(() => {
+    if (invoiceType === "IMMEDIATE") return Number(formData.immediatePrice || 0);
     return formData.items.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-  }, [formData.items]);
+  }, [formData.items, invoiceType, formData.immediatePrice]);
 
   const tax = 0;
   const discount = Number(formData.discount || 0);
@@ -240,13 +246,25 @@ export default function InvoicesPage() {
 
   const handleFinalize = async () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.customerId) {
-      newErrors.customerId = "Customer is required";
-      toast.error("Please select a billing customer");
-    }
-    if (formData.items.length === 0) {
-      newErrors.items = "At least one item is required";
-      toast.error("Please add at least one item to the invoice");
+    if (invoiceType === "IMMEDIATE") {
+      if (!formData.immediateCustomerName) newErrors.immediateCustomerName = "Name is required";
+      if (!formData.immediateCustomerPhone) {
+        newErrors.immediateCustomerPhone = "Phone number is required";
+      } else if (formData.immediateCustomerPhone.length < 10) {
+        newErrors.immediateCustomerPhone = "Must be at least 10 digits";
+      }
+      if (!formData.immediateItemName) newErrors.immediateItemName = "Item is required";
+      if (Number(formData.immediatePrice) <= 0) newErrors.immediatePrice = "Amount must be > 0";
+      if (Number(formData.immediateQuantity) <= 0) newErrors.immediateQuantity = "Qty must be > 0";
+    } else {
+      if (!formData.customerId) {
+        newErrors.customerId = "Customer is required";
+        toast.error("Please select a billing customer");
+      }
+      if (formData.items.length === 0) {
+        newErrors.items = "At least one item is required";
+        toast.error("Please add at least one item to the invoice");
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -266,7 +284,9 @@ export default function InvoicesPage() {
   const executeInvoiceCreation = async () => {
     setIsSubmitting(true);
     try {
-      const mappedItems = formData.items.map(item => ({
+      let finalCustomerId = formData.customerId;
+      let finalRepairJobId = formData.repairJobId;
+      let finalItems = formData.items.map(item => ({
         productId: item.productId || null,
         itemName: item.name,
         itemType: item.isRepair ? "REPAIR" : "PRODUCT",
@@ -275,10 +295,57 @@ export default function InvoicesPage() {
         totalPrice: Number(item.totalPrice)
       }));
 
+      if (invoiceType === "IMMEDIATE") {
+        // Try to find existing customer by phone number
+        finalCustomerId = "";
+        const phoneToUse = formData.immediateCustomerPhone;
+        const existingCustomer = customers.find(c => c.phoneNumber === phoneToUse);
+
+        if (existingCustomer) {
+          finalCustomerId = existingCustomer.id;
+        } else {
+          // Create Customer
+          try {
+            const newCustomer = await customerService.createCustomer({
+              fullName: formData.immediateCustomerName,
+              phoneNumber: phoneToUse
+            });
+            finalCustomerId = newCustomer.id;
+            setCustomers(prev => [...prev, newCustomer]);
+          } catch (error: any) {
+            if (error.response?.status === 400) {
+              // Phone number might already exist but wasn't in our local state
+              const res = await customerService.getCustomers(1, 10, phoneToUse);
+              // Depending on interceptor, response is either the raw data or inside .data
+              const found = (res.data || res).find((c: any) => c.phoneNumber === phoneToUse);
+              if (found) {
+                finalCustomerId = found.id;
+              } else {
+                throw error;
+              }
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        // Skip Repair Job Creation completely for IMMEDIATE bills
+        
+        // Setup item
+        finalItems = [{
+          productId: null,
+          itemName: formData.immediateItemName,
+          itemType: "REPAIR",
+          quantity: Number(formData.immediateQuantity),
+          unitPrice: Number(formData.immediatePrice) / Number(formData.immediateQuantity),
+          totalPrice: Number(formData.immediatePrice)
+        }];
+      }
+
       const newInvoice = await invoiceService.createInvoice({
-        customerId: formData.customerId,
-        repairJobId: formData.repairJobId || null,
-        items: mappedItems,
+        customerId: finalCustomerId,
+        repairJobId: finalRepairJobId || null,
+        items: finalItems,
         subtotal: Number(subtotal),
         tax: Number(tax),
         discount: Number(discount),
@@ -298,7 +365,11 @@ export default function InvoicesPage() {
         handlePrintInvoice(newInvoice);
       }
 
-      setFormData({ customerId: "", repairJobId: "", items: [], paidAmount: 0, discount: 0, notes: "" });
+      if (invoiceType === "IMMEDIATE") {
+        setTimeout(() => toast.info("Reminder: Immediately Create Customer and Repair job"), 800);
+      }
+
+      setFormData({ customerId: "", repairJobId: "", items: [], paidAmount: 0, discount: 0, notes: "", immediateCustomerName: "", immediateCustomerPhone: "", immediateItemName: "", immediateQuantity: 1, immediatePrice: "" });
       setPaymentType("FULL");
       setPaymentMethod("CASH");
     } catch (error: any) {
@@ -508,11 +579,12 @@ export default function InvoicesPage() {
           {/* Invoice Type Selection */}
           <div className="space-y-6">
             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Transaction Type</label>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { id: "REPAIR", label: "Service Only", icon: Zap },
                 { id: "PRODUCT", label: "Product Only", icon: Smartphone },
-                { id: "BOTH", label: "Hybrid Bill", icon: Receipt }
+                { id: "BOTH", label: "Hybrid Bill", icon: Receipt },
+                { id: "IMMEDIATE", label: "Immediate", icon: Zap }
               ].map((type) => (
                 <button
                   key={type.id}
@@ -537,8 +609,71 @@ export default function InvoicesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-dashed">
-            {/* Customer Selection */}
-            <div className="space-y-4">
+            {invoiceType === "IMMEDIATE" ? (
+              <div className="col-span-1 md:col-span-2 space-y-4">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Immediate Billing Details</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Customer Name" 
+                    value={formData.immediateCustomerName} 
+                    onChange={e => setFormData({ ...formData, immediateCustomerName: e.target.value })} 
+                    error={errors.immediateCustomerName}
+                    required 
+                    icon={<User className="h-4 w-4" />}
+                  />
+                  <Input 
+                    label="Phone Number" 
+                    value={formData.immediateCustomerPhone} 
+                    onChange={e => setFormData({ ...formData, immediateCustomerPhone: e.target.value })} 
+                    error={errors.immediateCustomerPhone}
+                    required
+                    icon={<Phone className="h-4 w-4" />}
+                  />
+                  <Input 
+                    label="Repair Job / Product" 
+                    value={formData.immediateItemName} 
+                    onChange={e => setFormData({ ...formData, immediateItemName: e.target.value })} 
+                    error={errors.immediateItemName}
+                    required 
+                    icon={<Tag className="h-4 w-4" />}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                      label="Qty" 
+                      type="number"
+                      min={1}
+                      value={formData.immediateQuantity} 
+                      onChange={e => {
+                        const valStr = e.target.value;
+                        if (valStr === "") {
+                          setFormData({ ...formData, immediateQuantity: "" as any });
+                        } else {
+                          const val = Number(valStr);
+                          if (val > 0) {
+                            setFormData({ ...formData, immediateQuantity: val });
+                          }
+                        }
+                      }} 
+                      error={errors.immediateQuantity}
+                      required 
+                      icon={<Plus className="h-4 w-4" />}
+                    />
+                    <Input 
+                      label="Amount (₹)" 
+                      type="number"
+                      value={formData.immediatePrice} 
+                      onChange={e => setFormData({ ...formData, immediatePrice: e.target.value })} 
+                      error={errors.immediatePrice}
+                      required 
+                      icon={<IndianRupee className="h-4 w-4" />}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Customer Selection */}
+                <div className="space-y-4">
               <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Billing Participant</label>
               <SearchableSelect
                 label="Select Customer"
@@ -615,6 +750,8 @@ export default function InvoicesPage() {
                 })()}
               </div>
             )}
+            </>
+            )}
           </div>
 
           {/* Product Selection */}
@@ -674,15 +811,15 @@ export default function InvoicesPage() {
             </div>
           )}
 
-          {/* Line Items Table */}
-          <div className="space-y-6 pt-6 border-t border-dashed">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Billing Line Items</label>
-              <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-4">
-                {errors.items && <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">{errors.items}</span>}
-                <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-md uppercase tracking-widest">{formData.items.length} Items</span>
+          {invoiceType !== "IMMEDIATE" && (
+            <div className="space-y-6 pt-6 border-t border-dashed">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Billing Line Items</label>
+                <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-4">
+                  {errors.items && <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">{errors.items}</span>}
+                  <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-md uppercase tracking-widest">{formData.items.length} Items</span>
+                </div>
               </div>
-            </div>
 
             <div className="border border-border/50 rounded-3xl overflow-hidden shadow-sm">
               <table className="w-full border-collapse">
@@ -747,6 +884,7 @@ export default function InvoicesPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Payment Terms */}
           <div className="space-y-8 pt-8 border-t-2 border-dashed">
@@ -754,7 +892,7 @@ export default function InvoicesPage() {
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Payment Terms</label>
                 <div className="flex p-1 bg-muted/30 rounded-xl gap-1">
-                  {(invoiceType === "PRODUCT" ? ["FULL"] : ["FULL", "PARTIAL"]).map((term) => (
+                  {(invoiceType === "PRODUCT" ? ["FULL"] : invoiceType === "IMMEDIATE" ? ["FULL"] : ["FULL", "PARTIAL"]).map((term) => (
                     <button
                       key={term}
                       onClick={() => setPaymentType(term as any)}
