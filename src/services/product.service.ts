@@ -2,7 +2,7 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const productService = {
-  getProducts: async (page = 1, limit = 10, search = "", categoryId = "") => {
+  getProducts: async (page = 1, limit = 5, search = "", categoryId = "") => {
     const response = await axiosInstance.get(API_ENDPOINTS.PRODUCTS.GET_ALL, {
       params: { page, limit, search, categoryId }
     });

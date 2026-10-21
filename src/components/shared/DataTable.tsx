@@ -52,7 +52,7 @@ export function DataTable<T extends { id?: string | number }>({
   searchPlaceholder = "Search...",
   searchKeys,
   paginated = true,
-  pageSize: initialPageSize = 10,
+  pageSize: initialPageSize = 5,
   pageSizeOptions = [5, 10, 25, 50],
   toolbarExtra,
 }: DataTableProps<T>) {

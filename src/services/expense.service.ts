@@ -2,7 +2,7 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const expenseService = {
-  getExpenses: async (page = 1, limit = 10, search = "", startDate = "", endDate = "") => {
+  getExpenses: async (page = 1, limit = 5, search = "", startDate = "", endDate = "") => {
     const params: any = { page, limit, search };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;

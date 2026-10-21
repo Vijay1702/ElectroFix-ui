@@ -2,7 +2,7 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const invoiceService = {
-  getInvoices: async (page = 1, limit = 10, search = "", status = "", startDate = "", endDate = "") => {
+  getInvoices: async (page = 1, limit = 5, search = "", status = "", startDate = "", endDate = "") => {
     const params: any = { page, limit, search, status };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
@@ -36,7 +36,7 @@ export const invoiceService = {
 };
 
 export const paymentService = {
-  getPayments: async (page = 1, limit = 10, search = "", startDate = "", endDate = "") => {
+  getPayments: async (page = 1, limit = 5, search = "", startDate = "", endDate = "") => {
     const params: any = { page, limit, search };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;

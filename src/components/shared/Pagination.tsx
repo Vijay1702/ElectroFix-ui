@@ -9,7 +9,7 @@ interface PaginationProps {
   onLimitChange?: (limit: number) => void;
 }
 
-export function Pagination({ page, totalPages, limit = 10, onPageChange, onLimitChange }: PaginationProps) {
+export function Pagination({ page, totalPages, limit = 5, onPageChange, onLimitChange }: PaginationProps) {
   const safeTotalPages = isNaN(totalPages) || totalPages < 1 ? 1 : totalPages;
 
   // Generate page numbers array with ellipses where appropriate

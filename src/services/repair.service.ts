@@ -2,7 +2,7 @@ import axiosInstance from "@/api/axios";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export const repairService = {
-  getRepairs: async (page = 1, limit = 10, search = "", status = "", startDate = "", endDate = "") => {
+  getRepairs: async (page = 1, limit = 5, search = "", status = "", startDate = "", endDate = "") => {
     const params: any = { page, limit, search, status };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
